@@ -184,7 +184,7 @@ def build_summary_card(ai_result, today_full, settings):
         lines.append(f"{i}. {kp}")
 
     return (
-        f"Fuel Cell Intelligence - {today_full}",
+        f"{report_title} - {today_full}",
         "\n".join(lines),
         settings.get("summary_card_color", "blue"),
     )
@@ -249,3 +249,4 @@ def build_source_cards(articles, today, settings):
     flush()
     return cards
     report_title = settings.get("report_title", "Daily Intelligence")
+    report_title = settings.get("report_title", "每日情报")
