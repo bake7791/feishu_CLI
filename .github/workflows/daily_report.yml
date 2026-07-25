@@ -1,17 +1,17 @@
-﻿name: "\u71c3\u6599\u7535\u6c60\u6bcf\u65e5\u60c5\u62a5\u63a8\u9001"
+﻿name: "燃料电池每日情报推送"
 
 on:
   schedule:
-    # UTC 01:00 = \u5317\u4eac\u65f6\u95f4 09:00\uff08\u6bcf\u5929\u65e9\u4e0a\u63a8\u9001\uff09
-    - cron: "0 1 * * *"
-
-  # \u652f\u6301\u624b\u52a8\u89e6\u53d1\u8c03\u8bd5
+    - cron: "0 1 * * *"   # UTC 01:00 = 北京时间 09:00
   workflow_dispatch:
 
 jobs:
   daily-report:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -24,19 +24,15 @@ jobs:
 
       - name: Run Report
         env:
-          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
-          FEISHU_SECRET: ${{ secrets.FEISHU_SECRET }}
-          # GitHub Models: 直接用内置 GITHUB_TOKEN（免费）
-          # 如果用 OpenAI 直连，改为 ${{ secrets.AI_API_TOKEN }}
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+          FEISHU_RECEIVE_ID: ${{ secrets.FEISHU_RECEIVE_ID }}
           AI_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python main.py
 
-      - name: Upload report artifact (on failure)
+      - name: Upload crash log (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: "${{ github.run_id }}-crash-log"
           path: .push_state
-    # GitHub Models 免费 GPT-4o 需要读取权限
-    permissions:
-      contents: read

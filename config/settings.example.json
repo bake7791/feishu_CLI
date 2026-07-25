@@ -1,6 +1,7 @@
 ﻿{
   "_comment": "========== 燃料电池每日情报 - 主配置文件 ==========",
   "_usage": "复制此文件为 settings.json 并修改各项参数",
+  "_feishu_note": "飞书企业自建应用凭证通过 GitHub Secrets (FEISHU_APP_ID / FEISHU_APP_SECRET / FEISHU_RECEIVE_ID) 注入，无需写在此文件中",
 
   "ceid_map": {
     "_desc": "Google News 国家/语言映射（ceid 参数）",
@@ -13,7 +14,7 @@
   },
 
   "region_flags": {
-    "_desc": "地区对应的国旗 emoji，用于资讯列表标识",
+    "_desc": "地区对应的国旗 emoji",
     "US": "\ud83c\uddfa\ud83c\uddf8",
     "CN": "\ud83c\udde8\ud83c\uddf3",
     "JP": "\ud83c\uddef\ud83c\uddf5",
@@ -24,7 +25,7 @@
   },
 
   "region_buckets": {
-    "_desc": "地区分组规则，用于卡片按区域归类展示",
+    "_desc": "地区分组规则",
     "\u4e9a\u6d32": ["CN", "JP", "KR"],
     "\u6b27\u7f8e": ["US", "DE", "GB"],
     "\u5168\u7403": ["GLOBAL"],

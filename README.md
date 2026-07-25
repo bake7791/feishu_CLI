@@ -1,15 +1,24 @@
 ﻿# 燃料电池每日情报自动化推送
 
-基于飞书机器人 + GitHub Actions + GitHub Models 免费 GPT-4o 的全球燃料电池行业情报每日自动化推送系统。
+基于飞书企业自建应用机器人 + GitHub Actions + GitHub Models 免费 GPT-4o 的全球燃料电池行业情报每日自动化推送系统。
 
 ## 功能概述
 
 - **多语言信源采集**：中文 / 英文 / 日文 / 韩文 / 德文 Google News + 自定义 RSS
 - **AI 智能分析**：GitHub Models 免费 GPT-4o 结构化生成摘要 + 五段式简报
-- **飞书卡片推送**：交互式卡片，自动分片，按地区分组展示
-- **定时自动化**：GitHub Actions 每日定时执行，无需服务器
+- **飞书卡片推送**：企业自建应用机器人，通过 open_id 推送到指定用户
+- **定时自动化**：GitHub Actions 每日北京时间 09:00 自动执行
 - **崩溃告警**：脚本异常自动推送飞书故障通知
 - **零成本运行**：GitHub Models 免费额度 + Actions 免费额度
+
+## 前置准备：创建飞书企业自建应用
+
+1. 进入 [飞书开放平台](https://open.feishu.cn/app) → 创建企业自建应用
+2. **添加能力**：开启「机器人」能力
+3. **权限管理**：在「权限管理」中添加 `im:message:send_as_bot`（以机器人身份发送消息）权限
+4. **发布版本**：创建版本并发布，等待管理员审核通过
+5. 在「凭证与基础信息」中获取 **App ID** 和 **App Secret**
+6. 在飞书中找到目标用户，通过 [飞书开放平台 API](https://open.feishu.cn/document/server-docs/contact-v3/user/) 获取其 **open_id**
 
 ## 三步部署
 
@@ -28,30 +37,27 @@ cp prompt_user.example.txt prompt_user.txt
 cp prompt_fallback.example.txt prompt_fallback.txt
 ```
 
-然后编辑刚复制的文件：
+然后按需编辑：
 
 | 文件 | 说明 |
 |------|------|
-| `settings.json` | AI 端点（默认已配好 GitHub Models）、卡片样式、地区映射、屏蔽词 |
+| `settings.json` | AI 端点（默认 GitHub Models）、卡片样式、地区映射、屏蔽词 |
 | `sources.json` | Google News 检索词（多语言）、自定义 RSS 源 |
 | `prompt_system.txt` | AI 系统提示词（分析角色与输出格式） |
-| `prompt_user.txt` | AI 用户提示词（使用 `{article_count}` 和 `{articles_text}` 占位符）|
+| `prompt_user.txt` | AI 用户提示词（`{article_count}` 和 `{articles_text}` 占位符）|
 | `prompt_fallback.txt` | AI 降级提示词（JSON 输出失败时的纯文本模式）|
 
 ### 3. 配置 GitHub Secrets
 
-进入仓库 **Settings → Secrets and variables → Actions**，只需添加 **两个** 密钥：
+进入仓库 **Settings → Secrets and variables → Actions**，添加 **三个** 密钥：
 
 | Secret 名称 | 值 |
 |-------------|-----|
-| `FEISHU_WEBHOOK_URL` | 飞书机器人 Webhook 地址 |
-| `FEISHU_SECRET` | 飞书机器人签名校验密钥 |
+| `FEISHU_APP_ID` | 飞书应用 App ID（如 `cli_aaeb3f6171789bfb`）|
+| `FEISHU_APP_SECRET` | 飞书应用 App Secret |
+| `FEISHU_RECEIVE_ID` | 消息接收者的 open_id（如 `ou_24a2c63f...`）|
 
-> GitHub Models 的认证使用 Actions 内置的 `GITHUB_TOKEN`，无需额外配置。
-
-### 如果想用 OpenAI 直连
-
-编辑 `settings.json`，把 `ai_endpoint` 改回 `https://api.openai.com/v1/chat/completions`，然后在 Secrets 中添加 `AI_API_TOKEN`（你的 OpenAI API Key）。工作流文件 `.github/workflows/daily_report.yml` 中把 `AI_API_TOKEN` 的引用从 `${{ secrets.GITHUB_TOKEN }}` 改为 `${{ secrets.AI_API_TOKEN }}`。
+> GitHub Models 的 GPT-4o 认证使用 Actions 内置的 `GITHUB_TOKEN`，无需额外配置。
 
 ## 手动触发调试
 
@@ -59,14 +65,18 @@ cp prompt_fallback.example.txt prompt_fallback.txt
 2. 选择 **燃料电池每日情报推送**
 3. 点击 **Run workflow** → **Run workflow**
 
-## 本地调试
+## 本地调试验证
 
 ```bash
 # 零依赖（仅 Python 标准库）
-DRY_RUN=1 python main.py
+# 设置环境变量后运行
+$env:FEISHU_APP_ID="cli_xxxxxxxxxxxx"
+$env:FEISHU_APP_SECRET="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+$env:FEISHU_RECEIVE_ID="ou_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+$env:GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+DRY_RUN=1 python main.py    # 预览模式，不实际推送
+python main.py               # 正式推送
 ```
-
-`DRY_RUN=1` 模式仅打印卡片到控制台，不推送。
 
 ## 修改指南
 
@@ -96,31 +106,19 @@ DRY_RUN=1 python main.py
 ## 项目结构
 
 ```
-├── .github/workflows/daily_report.yml   # GitHub Actions 定时任务
-├── config/                              # 配置文件（用户仅修改此处）
+├── .github/workflows/daily_report.yml
+├── config/
 │   ├── settings.example.json
 │   ├── sources.example.json
 │   ├── prompt_system.example.txt
 │   ├── prompt_user.example.txt
 │   └── prompt_fallback.example.txt
-├── src/                                 # 功能模块（普通用户无需改动）
-│   ├── config_loader.py                 # 配置加载与校验
-│   ├── crawler.py                       # 新闻采集
-│   ├── ai_client.py                     # AI 分析
-│   ├── feishu_bot.py                    # 飞书推送
-│   └── utils.py                         # 通用工具
-├── main.py                              # 主入口
-└── .gitignore                           # 屏蔽真实配置文件
+├── src/
+│   ├── config_loader.py      # 配置加载与校验
+│   ├── crawler.py             # 新闻采集
+│   ├── ai_client.py           # AI 分析
+│   ├── feishu_bot.py          # 飞书企业自建应用推送
+│   └── utils.py               # 通用工具
+├── main.py                    # 主入口
+└── .gitignore
 ```
-
-## v2.0 更新说明
-
-- **HMAC 签名 BUG 修复**：传入实际请求 Body 替代空字节
-- **全局异常捕获**：崩溃自动推送飞书故障告警
-- **多格式 RSS 时间解析**：支持 8 种日期格式
-- **配置前置校验**：缺失必填字段输出中文提示
-- **URL 去重**：URL 优先 + 标题辅助
-- **配置化屏蔽词**：消除代码内硬编码
-- **智能 Markdown 分片**：优先在二级标题处切割
-- **防重复推送**：本地记录执行日期
-- **GitHub Models 免费 GPT-4o 支持**

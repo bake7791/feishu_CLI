@@ -1,62 +1,88 @@
-﻿"""飞书机器人推送模块 —— 签名、卡片构建、推送、分片"""
+﻿"""飞书企业自建应用机器人推送模块 —— tenant_access_token 鉴权"""
 
-import json, base64, hmac, hashlib, time as time_module
+import json, time as time_module
 import urllib.request
 
 # ══════════════════════════════════════════════════════════════
-# HMAC 签名（修复：传入实际请求 Body）
+# Token 缓存（有效期 7200s，提前 5 分钟刷新）
 # ══════════════════════════════════════════════════════════════
-def feishu_sign(timestamp, secret, body_bytes):
-    """飞书官方签名算法：HMAC-SHA256(timestamp\nsecret, request_body)
-
-    重要：第二个参数必须传入请求 Body 的实际字节，
-    空字节会导致飞书服务端拦截所有消息。
-    """
-    string_to_sign = (timestamp + "\n" + secret).encode("utf-8")
-    return base64.b64encode(
-        hmac.new(string_to_sign, body_bytes, hashlib.sha256).digest()
-    ).decode()
+_token_cache = {"token": "", "expires_at": 0}
 
 
+def _get_tenant_access_token(app_id, app_secret):
+    """获取 tenant_access_token，带缓存复用。"""
+    now = time_module.time()
+    if _token_cache["token"] and now < _token_cache["expires_at"] - 300:
+        return _token_cache["token"]
+
+    url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
+    body = json.dumps({
+        "app_id": app_id,
+        "app_secret": app_secret,
+    }).encode()
+    req = urllib.request.Request(
+        url, data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=10) as r:
+        resp = json.loads(r.read().decode())
+    if resp.get("code") != 0:
+        raise RuntimeError(f"获取 tenant_access_token 失败: {resp}")
+
+    _token_cache["token"] = resp["tenant_access_token"]
+    _token_cache["expires_at"] = now + resp.get("expire", 7200)
+    return _token_cache["token"]
+
+
 # ══════════════════════════════════════════════════════════════
-# 推送函数
+# 消息推送
 # ══════════════════════════════════════════════════════════════
-def send_card(webhook_url, feishu_secret, title, content, color,
+def _build_card_json(title, content, color):
+    """构建飞书卡片 JSON 对象（消息 API 格式，无 card 外层包装）。"""
+    return {
+        "config": {"wide_screen_mode": True},
+        "header": {
+            "title": {"tag": "plain_text", "content": title[:80]},
+            "template": color,
+        },
+        "elements": [{"tag": "markdown", "content": content}],
+    }
+
+
+def send_card(app_id, app_secret, receive_id, title, content, color,
               retries=3, _sleep=time_module.sleep):
-    """推送飞书交互式卡片。
+    """通过企业自建应用机器人推送交互式卡片。
 
     Args:
-        webhook_url: 飞书 Webhook 地址
-        feishu_secret: 签名密钥
-        title: 卡片标题（最长 80 字符）
+        app_id: 飞书应用 App ID
+        app_secret: 飞书应用 App Secret
+        receive_id: 接收者 open_id
+        title: 卡片标题
         content: Markdown 内容
-        color: 卡片顶部色条（blue/green/red/turquoise/purple 等）
+        color: 卡片顶部色条
         retries: 重试次数
-        _sleep: 延迟函数（便于测试注入）
 
     Returns:
         bool: 推送成功返回 True
     """
-    payload = {
+    token = _get_tenant_access_token(app_id, app_secret)
+    card = _build_card_json(title, content, color)
+
+    url = "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id"
+    body = json.dumps({
+        "receive_id": receive_id,
         "msg_type": "interactive",
-        "card": {
-            "header": {
-                "title": {"tag": "plain_text", "content": title[:80]},
-                "template": color,
-            },
-            "elements": [{"tag": "markdown", "content": content}],
-        },
-    }
-    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        "content": json.dumps(card, ensure_ascii=False),
+    }, ensure_ascii=False).encode()
 
     for attempt in range(retries):
-        ts = str(int(time_module.time()))
-        sig = feishu_sign(ts, feishu_secret, data)
-        url = f"{webhook_url}?timestamp={ts}&sign={sig}"
-
         req = urllib.request.Request(
-            url, data=data,
-            headers={"Content-Type": "application/json; charset=utf-8"},
+            url, data=body,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token}",
+            },
             method="POST",
         )
         try:
@@ -66,62 +92,51 @@ def send_card(webhook_url, feishu_secret, title, content, color,
                 return True
             if attempt < retries - 1:
                 _sleep(2)
+                token = _get_tenant_access_token(app_id, app_secret)
         except Exception:
             if attempt < retries - 1:
                 _sleep(2)
+                token = _get_tenant_access_token(app_id, app_secret)
     return False
 
 
-def send_alert(webhook_url, feishu_secret, message):
-    """推送纯文本故障告警（用于全局异常捕获）。
-
-    Args:
-        webhook_url: 飞书 Webhook 地址
-        feishu_secret: 签名密钥
-        message: 告警消息
-    """
-    payload = {
+def send_alert(app_id, app_secret, receive_id, message):
+    """推送纯文本故障告警。"""
+    token = _get_tenant_access_token(app_id, app_secret)
+    url = "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id"
+    body = json.dumps({
+        "receive_id": receive_id,
         "msg_type": "text",
-        "content": {
+        "content": json.dumps({
             "text": f"\u26a0\ufe0f \u71c3\u6599\u7535\u6c60\u60c5\u62a5\u811a\u672c\u5f02\u5e38\n\n{message}"
-        },
-    }
-    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    ts = str(int(time_module.time()))
-    sig = feishu_sign(ts, feishu_secret, data)
-    url = f"{webhook_url}?timestamp={ts}&sign={sig}"
+        }, ensure_ascii=False),
+    }, ensure_ascii=False).encode()
 
     try:
         req = urllib.request.Request(
-            url, data=data,
-            headers={"Content-Type": "application/json; charset=utf-8"},
+            url, data=body,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token}",
+            },
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=15):
             pass
     except Exception:
-        pass  # 告警推送失败不阻塞主流程
+        pass
 
 
 # ══════════════════════════════════════════════════════════════
-# 卡片构建
+# 卡片构建（与 webhook 版完全一致的 UI 逻辑）
 # ══════════════════════════════════════════════════════════════
 def split_markdown(content, limit=4500):
-    """智能 Markdown 分片：优先在 ## 二级标题处切割，保持排版完整。
-
-    Args:
-        content: Markdown 文本
-        limit: 单卡片最大字符数
-
-    Returns:
-        list[str]: 分片后的文本列表
-    """
+    """智能 Markdown 分片：优先在 ## 二级标题处切割。"""
     if not content:
         return []
     if len(content) <= limit:
         return [content]
 
-    # 第一步：按 ## 标题分节
     chunks = []
     current = ""
     sections = content.split("\n## ")
@@ -136,7 +151,6 @@ def split_markdown(content, limit=4500):
     if current.strip():
         chunks.append(current.rstrip())
 
-    # 第二步：对仍然超限的片段按字符硬切
     final = []
     for c in chunks:
         if len(c) <= limit:
@@ -148,16 +162,6 @@ def split_markdown(content, limit=4500):
 
 
 def build_summary_card(ai_result, today_full, settings):
-    """构建摘要卡片。
-
-    Args:
-        ai_result: AI 分析结果
-        today_full: 完整日期字符串
-        settings: settings 配置
-
-    Returns:
-        (title, content, color)
-    """
     if ai_result.get("raw"):
         return (
             f"Fuel Cell Intelligence - {today_full}",
@@ -187,16 +191,6 @@ def build_summary_card(ai_result, today_full, settings):
 
 
 def build_source_cards(articles, today, settings):
-    """按地区分组构建信源卡片。
-
-    Args:
-        articles: 文章列表
-        today: 日期短格式 (MM)
-        settings: settings 配置
-
-    Returns:
-        list[(title, content, color)]
-    """
     flags = settings["region_flags"]
     buckets_def = settings["region_buckets"]
     char_limit = settings.get("card_char_limit", 4500)
