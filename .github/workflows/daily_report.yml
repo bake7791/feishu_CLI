@@ -2,7 +2,7 @@
 
 on:
   schedule:
-    - cron: "0 1 * * *"   # UTC 01:00 = 北京时间 09:00
+    - cron: "0 1 * * *"
   workflow_dispatch:
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
           FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
           FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
           FEISHU_RECEIVE_ID: ${{ secrets.FEISHU_RECEIVE_ID }}
-          AI_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AI_API_TOKEN: ${{ secrets.AI_API_TOKEN }}
         run: python main.py
 
       - name: Upload crash log (on failure)
