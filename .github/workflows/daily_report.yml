@@ -1,0 +1,37 @@
+﻿name: "\u71c3\u6599\u7535\u6c60\u6bcf\u65e5\u60c5\u62a5\u63a8\u9001"
+
+on:
+  schedule:
+    # UTC 01:00 = \u5317\u4eac\u65f6\u95f4 09:00\uff08\u6bcf\u5929\u65e9\u4e0a\u63a8\u9001\uff09
+    - cron: "0 1 * * *"
+
+  # \u652f\u6301\u624b\u52a8\u89e6\u53d1\u8c03\u8bd5
+  workflow_dispatch:
+
+jobs:
+  daily-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Report
+        env:
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+          FEISHU_SECRET: ${{ secrets.FEISHU_SECRET }}
+          AI_API_TOKEN: ${{ secrets.AI_API_TOKEN }}
+        run: python main.py
+
+      - name: Upload report artifact (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: "${{ github.run_id }}-crash-log"
+          path: .push_state

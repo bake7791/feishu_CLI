@@ -1,0 +1,35 @@
+﻿# 真实配置文件（含密钥/隐私信息，禁止提交）
+config/settings.json
+config/sources.json
+config/prompt_system.txt
+config/prompt_user.txt
+config/prompt_fallback.txt
+
+# 推送状态文件（防重复推送）
+.push_state
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log

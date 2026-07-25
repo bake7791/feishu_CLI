@@ -1,0 +1,64 @@
+﻿{
+  "_comment": "========== 燃料电池每日情报 - 主配置文件 ==========",
+  "_usage": "复制此文件为 settings.json 并修改各项参数",
+
+  "ceid_map": {
+    "_desc": "Google News 国家/语言映射（ceid 参数）",
+    "US": "US:en",
+    "CN": "CN:zh",
+    "JP": "JP:ja",
+    "KR": "KR:ko",
+    "DE": "DE:de",
+    "GB": "GB:en"
+  },
+
+  "region_flags": {
+    "_desc": "地区对应的国旗 emoji，用于资讯列表标识",
+    "US": "\ud83c\uddfa\ud83c\uddf8",
+    "CN": "\ud83c\udde8\ud83c\uddf3",
+    "JP": "\ud83c\uddef\ud83c\uddf5",
+    "KR": "\ud83c\uddf0\ud83c\uddf7",
+    "DE": "\ud83c\udde9\ud83c\uddea",
+    "GB": "\ud83c\uddec\ud83c\udde7",
+    "GLOBAL": "\ud83c\udf0d"
+  },
+
+  "region_buckets": {
+    "_desc": "地区分组规则，用于卡片按区域归类展示",
+    "\u4e9a\u6d32": ["CN", "JP", "KR"],
+    "\u6b27\u7f8e": ["US", "DE", "GB"],
+    "\u5168\u7403": ["GLOBAL"],
+    "\u5176\u4ed6": []
+  },
+
+  "ai_endpoint": "https://api.openai.com/v1/chat/completions",
+  "ai_model": "gpt-4o",
+  "max_tokens": 4000,
+  "temperature": 0.3,
+
+  "card_char_limit": 4500,
+  "summary_card_color": "blue",
+  "report_card_color": "green",
+  "source_card_color_1": "turquoise",
+  "source_card_color_2": "purple",
+  "no_news_card_color": "red",
+  "no_news_text": "\u4eca\u65e5\u6682\u65e0\u71c3\u6599\u7535\u6c60\u76f8\u5173\u65b0\u95fb\u3002",
+
+  "summary_labels": ["\u6700\u5173\u952e\u4fe1\u53f7", "\u6700\u5927\u673a\u4f1a", "\u6700\u5927\u98ce\u9669"],
+
+  "skip_keywords": [
+    "stock", "share price", "sponsored", "advertisement",
+    "promoted", "partner content"
+  ],
+
+  "rss_time_formats": [
+    "%a, %d %b %Y %H:%M:%S %Z",
+    "%a, %d %b %Y %H:%M:%S %z",
+    "%Y-%m-%dT%H:%M:%S%z",
+    "%Y-%m-%dT%H:%M:%SZ",
+    "%Y-%m-%dT%H:%M:%S",
+    "%Y-%m-%d %H:%M:%S",
+    "%a, %d %b %Y %H:%M:%S",
+    "%d %b %Y %H:%M:%S %Z"
+  ]
+}

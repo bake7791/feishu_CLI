@@ -1,0 +1,60 @@
+﻿{
+  "_comment": "========== 信源配置 ==========",
+  "_usage": "复制此文件为 sources.json 并修改检索词和 RSS 源",
+
+  "max_articles": 80,
+
+  "queries": [
+    {
+      "_desc": "美国 - 氢气燃料电池新闻（英文）",
+      "query": "hydrogen fuel cell",
+      "hl": "en-US",
+      "gl": "US"
+    },
+    {
+      "_desc": "美国 - 燃料电池技术（英文）",
+      "query": "fuel cell technology",
+      "hl": "en-US",
+      "gl": "US"
+    },
+    {
+      "_desc": "中国 - 燃料电池（中文）",
+      "query": "\u71c3\u6599\u7535\u6c60",
+      "hl": "zh-CN",
+      "gl": "CN"
+    },
+    {
+      "_desc": "日本 - 燃料電池（日文）",
+      "query": "\u71c3\u6599\u96fb\u6c60",
+      "hl": "ja-JP",
+      "gl": "JP"
+    },
+    {
+      "_desc": "韩国 - \uc5f0\ub8cc\uc804\uc9c0（韩文）",
+      "query": "\uc5f0\ub8cc\uc804\uc9c0",
+      "hl": "ko-KR",
+      "gl": "KR"
+    },
+    {
+      "_desc": "德国 - Wasserstoff Brennstoffzelle（德文）",
+      "query": "Wasserstoff Brennstoffzelle",
+      "hl": "de-DE",
+      "gl": "DE"
+    }
+  ],
+
+  "feeds": [
+    {
+      "_desc": "Fuel Cell Works RSS",
+      "name": "Fuel Cell Works",
+      "url": "https://fuelcellsworks.com/feed",
+      "region": "GLOBAL"
+    },
+    {
+      "_desc": "H2 View RSS",
+      "name": "H2 View",
+      "url": "https://www.h2-view.com/feed/",
+      "region": "GB"
+    }
+  ]
+}
