@@ -31,7 +31,8 @@
     "\u5176\u4ed6": []
   },
 
-  "ai_endpoint": "https://api.openai.com/v1/chat/completions",
+  "ai_endpoint": "https://models.inference.ai.azure.com/chat/completions",
+  "_ai_endpoint_openai": "若使用 OpenAI 直连，改为 https://api.openai.com/v1/chat/completions",
   "ai_model": "gpt-4o",
   "max_tokens": 4000,
   "temperature": 0.3,

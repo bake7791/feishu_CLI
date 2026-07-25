@@ -26,7 +26,9 @@ jobs:
         env:
           FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
           FEISHU_SECRET: ${{ secrets.FEISHU_SECRET }}
-          AI_API_TOKEN: ${{ secrets.AI_API_TOKEN }}
+          # GitHub Models: 直接用内置 GITHUB_TOKEN（免费）
+          # 如果用 OpenAI 直连，改为 ${{ secrets.AI_API_TOKEN }}
+          AI_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python main.py
 
       - name: Upload report artifact (on failure)
@@ -35,3 +37,6 @@ jobs:
         with:
           name: "${{ github.run_id }}-crash-log"
           path: .push_state
+    # GitHub Models 免费 GPT-4o 需要读取权限
+    permissions:
+      contents: read

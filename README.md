@@ -1,14 +1,15 @@
 ﻿# 燃料电池每日情报自动化推送
 
-基于飞书机器人 + GitHub Actions 的全球燃料电池行业情报每日自动化推送系统。
+基于飞书机器人 + GitHub Actions + GitHub Models 免费 GPT-4o 的全球燃料电池行业情报每日自动化推送系统。
 
 ## 功能概述
 
 - **多语言信源采集**：中文 / 英文 / 日文 / 韩文 / 德文 Google News + 自定义 RSS
-- **AI 智能分析**：GPT-4o 结构化生成摘要 + 五段式简报（政策/技术/竞争/市场/行动建议）
+- **AI 智能分析**：GitHub Models 免费 GPT-4o 结构化生成摘要 + 五段式简报
 - **飞书卡片推送**：交互式卡片，自动分片，按地区分组展示
 - **定时自动化**：GitHub Actions 每日定时执行，无需服务器
 - **崩溃告警**：脚本异常自动推送飞书故障通知
+- **零成本运行**：GitHub Models 免费额度 + Actions 免费额度
 
 ## 三步部署
 
@@ -31,7 +32,7 @@ cp prompt_fallback.example.txt prompt_fallback.txt
 
 | 文件 | 说明 |
 |------|------|
-| `settings.json` | AI 端点、模型、卡片样式、地区映射、屏蔽词 |
+| `settings.json` | AI 端点（默认已配好 GitHub Models）、卡片样式、地区映射、屏蔽词 |
 | `sources.json` | Google News 检索词（多语言）、自定义 RSS 源 |
 | `prompt_system.txt` | AI 系统提示词（分析角色与输出格式） |
 | `prompt_user.txt` | AI 用户提示词（使用 `{article_count}` 和 `{articles_text}` 占位符）|
@@ -39,13 +40,18 @@ cp prompt_fallback.example.txt prompt_fallback.txt
 
 ### 3. 配置 GitHub Secrets
 
-进入仓库 **Settings → Secrets and variables → Actions**，添加三个密钥：
+进入仓库 **Settings → Secrets and variables → Actions**，只需添加 **两个** 密钥：
 
 | Secret 名称 | 值 |
 |-------------|-----|
 | `FEISHU_WEBHOOK_URL` | 飞书机器人 Webhook 地址 |
 | `FEISHU_SECRET` | 飞书机器人签名校验密钥 |
-| `AI_API_TOKEN` | OpenAI / 兼容 API 的 Token |
+
+> GitHub Models 的认证使用 Actions 内置的 `GITHUB_TOKEN`，无需额外配置。
+
+### 如果想用 OpenAI 直连
+
+编辑 `settings.json`，把 `ai_endpoint` 改回 `https://api.openai.com/v1/chat/completions`，然后在 Secrets 中添加 `AI_API_TOKEN`（你的 OpenAI API Key）。工作流文件 `.github/workflows/daily_report.yml` 中把 `AI_API_TOKEN` 的引用从 `${{ secrets.GITHUB_TOKEN }}` 改为 `${{ secrets.AI_API_TOKEN }}`。
 
 ## 手动触发调试
 
@@ -56,12 +62,11 @@ cp prompt_fallback.example.txt prompt_fallback.txt
 ## 本地调试
 
 ```bash
-# 安装依赖（仅标准库，无需 pip install）
-# 设置环境变量后运行
+# 零依赖（仅 Python 标准库）
 DRY_RUN=1 python main.py
 ```
 
-`DRY_RUN=1` 模式仅打印卡片内容到控制台，不实际推送。
+`DRY_RUN=1` 模式仅打印卡片到控制台，不推送。
 
 ## 修改指南
 
@@ -110,13 +115,12 @@ DRY_RUN=1 python main.py
 
 ## v2.0 更新说明
 
-相比旧版 `test.py`，本版本修复了以下关键问题：
-
-- **HMAC 签名 BUG**：传入实际请求 Body 替代空字节，修复飞书拦截
+- **HMAC 签名 BUG 修复**：传入实际请求 Body 替代空字节
 - **全局异常捕获**：崩溃自动推送飞书故障告警
-- **多格式 RSS 时间解析**：支持 8 种日期格式，修复排序错乱
+- **多格式 RSS 时间解析**：支持 8 种日期格式
 - **配置前置校验**：缺失必填字段输出中文提示
-- **URL 去重**：URL 优先 + 标题辅助，防止漏删和误删
+- **URL 去重**：URL 优先 + 标题辅助
 - **配置化屏蔽词**：消除代码内硬编码
 - **智能 Markdown 分片**：优先在二级标题处切割
 - **防重复推送**：本地记录执行日期
+- **GitHub Models 免费 GPT-4o 支持**
