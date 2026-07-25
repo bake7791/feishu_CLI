@@ -1,4 +1,4 @@
-﻿请分析以下 {article_count} 条燃料电池相关新闻，生成今日情报简报。
+﻿请分析以下 {article_count} 条铜及预焙阳极相关新闻，生成今日情报简报。
 
 新闻列表：
 {articles_text}

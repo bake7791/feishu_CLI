@@ -164,7 +164,7 @@ def split_markdown(content, limit=4500):
 def build_summary_card(ai_result, today_full, settings):
     if ai_result.get("raw"):
         return (
-            f"Fuel Cell Intelligence - {today_full}",
+            f"{report_title} - {today_full}",
             settings.get("no_news_text", "\u6458\u8981\u751f\u6210\u5931\u8d25\uff0c\u8be6\u89c1\u6b63\u6587\u5361\u7247\u3002"),
             settings.get("no_news_card_color", "red"),
         )
@@ -248,3 +248,4 @@ def build_source_cards(articles, today, settings):
             current_len += len(line)
     flush()
     return cards
+    report_title = settings.get("report_title", "Daily Intelligence")

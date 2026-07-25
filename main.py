@@ -1,5 +1,5 @@
 ﻿#!/usr/bin/env python3
-"""燃料电池每日情报自动化推送 —— 主入口（企业自建应用机器人）
+"""铜及预焙阳极每日情报自动化推送 —— 主入口（企业自建应用机器人）
 
 用法：
   正式推送:  python main.py
@@ -23,9 +23,6 @@ from src.feishu_bot import (
     build_source_cards,
 )
 
-# ══════════════════════════════════════════════════════════════
-# 防重复推送
-# ══════════════════════════════════════════════════════════════
 _STATE_FILE = Path(__file__).parent / ".push_state"
 
 
@@ -42,9 +39,6 @@ def _mark_pushed(today):
     _STATE_FILE.write_text(today, encoding="utf-8")
 
 
-# ══════════════════════════════════════════════════════════════
-# 主流程
-# ══════════════════════════════════════════════════════════════
 def run():
     td = datetime.now()
     today_full = td.strftime("%Y-%m-%d")
@@ -61,6 +55,7 @@ def run():
     app_id     = cfg["app_id"]
     app_secret = cfg["app_secret"]
     receive_id = cfg["receive_id"]
+    report_title = settings.get("report_title", "每日情报")
 
     # ── [1/3] 采集 ──
     print("[1/3] 采集资讯...")
@@ -75,8 +70,7 @@ def run():
             print(f"\n=== 今日无新闻 ===\n{settings.get('no_news_text')}\n")
         else:
             send_card(app_id, app_secret, receive_id,
-                      "No News",
-                      settings.get("no_news_text", "No fuel cell news today."),
+                      "No News", settings.get("no_news_text", ""),
                       settings.get("no_news_card_color", "red"))
         return
 
@@ -101,10 +95,11 @@ def run():
     # Card 2+: 报告正文
     body = (ai_result.get("text", "") if ai_result.get("raw")
             else ai_result.get("sections", ""))
-    for idx, chunk in enumerate(split_markdown(body, card_limit), 1):
-        title = (f"Fuel Cell Report {idx} - {today_full}"
-                 if len(split_markdown(body, card_limit)) > 1
-                 else f"Fuel Cell Report - {today_full}")
+    chunks = split_markdown(body, card_limit)
+    for idx, chunk in enumerate(chunks, 1):
+        title = (f"{report_title} {idx} - {today_full}"
+                 if len(chunks) > 1
+                 else f"{report_title} - {today_full}")
         if dry:
             print(f"\n=== {title} ===\n{chunk}\n")
         else:
@@ -126,9 +121,6 @@ def run():
     print("Done!")
 
 
-# ══════════════════════════════════════════════════════════════
-# 全局异常捕获
-# ══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     try:
         run()
