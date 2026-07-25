@@ -1,35 +1,35 @@
-﻿"""配置加载与校验模块"""
+﻿"""配置加载与校验模块 —— 自动回退到 .example 模板"""
 
 import json
 import os
 from pathlib import Path
 
 
-def load_settings(config_dir, name, required_keys):
-    """加载 JSON 配置文件并校验必填字段。"""
-    file = config_dir / name
-    if not file.exists():
-        raise FileNotFoundError(
-            f"配置文件不存在: {file}\n"
-            f"请复制 {name.replace('.json', '.example.json')} "
-            f"并修改为 {name}"
-        )
+def _find_config(config_dir, name):
+    """查找配置文件，优先正式文件，不存在则回退到 .example 模板。"""
+    real = config_dir / name
+    if real.exists():
+        return real
+    example = config_dir / name.replace(".json", ".example.json").replace(".txt", ".example.txt")
+    if example.exists():
+        print(f"  [INFO] {name} 不存在，使用模板 {example.name}")
+        return example
+    raise FileNotFoundError(f"配置文件不存在: {real}\n请创建该文件或确保模板 {example.name} 存在")
 
+
+def load_settings(config_dir, name, required_keys):
+    file = _find_config(config_dir, name)
     with open(file, "r", encoding="utf-8-sig") as f:
         data = json.load(f)
 
     errors = []
     for key, desc in required_keys:
         if key not in data:
-            errors.append(
-                f"  - [{key}] {desc}\n"
-                f"请参考 {name.replace('.json', '.example.json')}"
-            )
+            errors.append(f"  - [{key}] {desc}")
 
     if errors:
         msg = (
-            f"配置文件 {file} 校验失败，"
-            f"缺少以下必填字段：\n"
+            f"配置文件 {file} 校验失败，缺少以下必填字段：\n"
             + "\n".join(errors)
         )
         raise ValueError(msg)
@@ -38,20 +38,12 @@ def load_settings(config_dir, name, required_keys):
 
 
 def load_text(config_dir, name):
-    """加载纯文本配置文件。"""
-    file = config_dir / name
-    if not file.exists():
-        raise FileNotFoundError(
-            f"文本文件不存在: {file}\n"
-            f"请复制 {name.replace('.txt', '.example.txt')} "
-            f"并修改为 {name}"
-        )
+    file = _find_config(config_dir, name)
     with open(file, "r", encoding="utf-8-sig") as f:
         return f.read()
 
 
 def load_prompt_fallback(config_dir):
-    """加载降级提示词，文件不存在时返回内置默认值。"""
     try:
         return load_text(config_dir, "prompt_fallback.txt")
     except FileNotFoundError:
@@ -63,7 +55,6 @@ def load_prompt_fallback(config_dir):
 
 
 def load_all(config_dir):
-    """加载全部配置文件并返回统一配置对象。"""
     settings = load_settings(config_dir, "settings.json", [
         ("ceid_map",       "Google News 国家/语言映射"),
         ("region_flags",   "地区国旗 emoji 映射"),
@@ -83,12 +74,10 @@ def load_all(config_dir):
     prompt_user     = load_text(config_dir, "prompt_user.txt")
     prompt_fallback = load_prompt_fallback(config_dir)
 
-    # 飞书企业自建应用凭证
     app_id     = os.environ.get("FEISHU_APP_ID", "")
     app_secret = os.environ.get("FEISHU_APP_SECRET", "")
     receive_id = os.environ.get("FEISHU_RECEIVE_ID", "")
 
-    # AI Token (GitHub Models 优先用 GITHUB_TOKEN)
     ai_api_token = (
         os.environ.get("AI_API_TOKEN")
         or os.environ.get("GITHUB_TOKEN", "")
