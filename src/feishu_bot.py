@@ -162,6 +162,7 @@ def split_markdown(content, limit=4500):
 
 
 def build_summary_card(ai_result, today_full, settings):
+    report_title = settings.get("report_title", "每日情报")
     if ai_result.get("raw"):
         return (
             f"{report_title} - {today_full}",
@@ -248,5 +249,3 @@ def build_source_cards(articles, today, settings):
             current_len += len(line)
     flush()
     return cards
-    report_title = settings.get("report_title", "Daily Intelligence")
-    report_title = settings.get("report_title", "每日情报")
