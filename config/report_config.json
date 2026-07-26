@@ -1,0 +1,130 @@
+﻿{
+  "_comment": [
+    "================================================================",
+    " 报告配置文件 (report_config.json)",
+    "================================================================",
+    "",
+    " 这是项目的核心配置文件，定义了报告的完整数据模型。",
+    " 换行业/改品种/调数据源，只需编辑此文件即可，无需改 Python 代码。",
+    "",
+    " 使用场景举例：",
+    "   - 追踪钢材 → 删掉 data_items 里的铜/铝，换成螺纹钢/热卷",
+    "   - 只关心国际 → 把所有 item 的 region 改成 GLOBAL",
+    "   - 增加品种 → 在 data_items 里加一条，自动出现在 KPI 看板",
+    "",
+    " source 类型说明：",
+    "   yahoo      Yahoo Finance（全球可用，适合国际期货/指数）",
+    "   eastmoney  东方财富（国内期货，可能被海外 IP 封）",
+    "   sina       新浪财经（国内期货的备用源，CDN 对海外更友好）",
+    "",
+    " fallback 说明：",
+    "   当 source 为 eastmoney 时可指定 fallback: \"sina\"",
+    "   东方财富不可用时自动切换到新浪，对使用者完全透明",
+    "================================================================"
+  ],
+  "_usage": "复制此文件为 report_config.json，按需修改 data_items 和 news.topics",
+
+  "report": {
+    "title": "铜及预焙阳极每日情报报告",
+    "industry": "铜及预焙阳极",
+    "audience": "企业老板、采购负责人和运营高层",
+    "description": "全球铜及预焙阳极产业链行情分析与经营决策参考",
+    "card_char_limit": 4500,
+    "summary_card_color": "blue",
+    "report_card_color": "green",
+    "kpi_card_color": "blue",
+    "chart_card_color": "wathet",
+    "no_news_text": "今日暂无相关新闻。"
+  },
+
+  "data_items": [
+    {
+      "_desc": "COMEX铜 —— 国际铜价基准，Yahoo Finance 全球可用",
+      "name": "COMEX铜",
+      "source": "yahoo",
+      "symbol": "HG=F",
+      "unit": "美分/磅",
+      "exchange": "COMEX",
+      "region": "GLOBAL",
+      "category": "copper",
+      "enabled": true
+    },
+    {
+      "_desc": "沪铜主力 —— 国内铜价基准，东方财富优先，新浪备用",
+      "name": "沪铜主力",
+      "source": "eastmoney",
+      "fallback": "sina",
+      "symbol": "CU0",
+      "market": "113",
+      "unit": "元/吨",
+      "exchange": "SHFE",
+      "region": "CN",
+      "category": "copper",
+      "enabled": true
+    },
+    {
+      "_desc": "沪铝主力 —— 预焙阳极下游成本关联品种",
+      "name": "沪铝主力",
+      "source": "eastmoney",
+      "fallback": "sina",
+      "symbol": "AL0",
+      "market": "113",
+      "unit": "元/吨",
+      "exchange": "SHFE",
+      "region": "CN",
+      "category": "aluminum",
+      "enabled": true
+    },
+    {
+      "_desc": "美元指数 —— 宏观风向标，影响大宗商品定价",
+      "name": "美元指数",
+      "source": "yahoo",
+      "symbol": "DX-Y.NYB",
+      "unit": "",
+      "exchange": "ICE",
+      "region": "GLOBAL",
+      "category": "macro",
+      "enabled": true
+    }
+  ],
+
+  "news": {
+    "topics": [
+      "copper price forecast",
+      "copper mining production",
+      "pre-baked anode",
+      "aluminum smelting",
+      "SHFE copper",
+      "LME copper stock",
+      "copper concentrate TC/RC",
+      "carbon anode industry",
+      "petroleum coke price",
+      "coal tar pitch"
+    ],
+    "skip_keywords": [
+      "stock price",
+      "shareholder",
+      "dividend",
+      "sponsored",
+      "advertisement",
+      "promoted",
+      "partner content"
+    ]
+  },
+
+  "ai": {
+    "endpoint": "https://models.inference.ai.azure.com/chat/completions",
+    "model": "gpt-4o",
+    "max_tokens": 4000,
+    "temperature": 0.3
+  },
+
+  "regions": {
+    "US": {"flag": "🇺🇸", "name": "美国"},
+    "CN": {"flag": "🇨🇳", "name": "中国"},
+    "CL": {"flag": "🇨🇱", "name": "智利"},
+    "GB": {"flag": "🇬🇧", "name": "英国"},
+    "AU": {"flag": "🇦🇺", "name": "澳大利亚"},
+    "GLOBAL": {"flag": "🌐", "name": "全球"}
+  }
+}
