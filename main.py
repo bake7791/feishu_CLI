@@ -1,41 +1,32 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 ================================================================================
-铜及预焙阳极每日情报自动化推送 —— 主入口 (main.py)
+铜及预焙阳极每日情报自动化推送 —— 主入口 (main.py) 增强版
 ================================================================================
-这是整个项目的唯一入口文件，负责串联所有模块完成每日情报的采集、分析和推送。
+企业自建应用增强版流水线：
+  1. 采集新闻（Google News + RSS）
+  2. 采集量化数据（期货价格 + 宏观指标）  ← 新增
+  3. AI 分析（8模块报告 + 情绪量化）       ← 增强
+  4. 渲染图表（价格趋势 + 涨跌幅柱状图）   ← 新增
+  5. 推送飞书卡片：
+     - 摘要卡片（含情绪指数）
+     - KPI 看板卡片（column_set 多列）     ← 新增
+     - 图表卡片（img 嵌入 PNG）            ← 新增
+     - 报告正文卡片（8模块 Markdown）
+     - 信源列表卡片（按地区分组）
 
 运行方式：
   正式推送：  python main.py
-  调试预览：  DRY_RUN=1 python main.py    （仅打印不推送，用于本地开发调试）
-
-执行流程：
-  config_loader → 加载配置
-  crawler       → 采集新闻（Google News + 自定义 RSS）
-  ai_client     → AI 分析（生成 8 模块决策级报告）
-  feishu_bot    → 推送飞书卡片（摘要 + 报告 + 信源列表）
-
-防重复机制：
-  每次成功推送后在 .push_state 文件中记录日期，同一天重复触发时自动跳过，
-  避免 GitHub Actions 手动重跑导致飞书群刷屏。
-
-异常处理：
-  顶层 try/except 捕获全部异常，崩溃时自动推送飞书故障告警，不静默失败。
-
-修改指南：
-  - 本文件应保持极简，只负责流程串联，不包含业务逻辑
-  - 如需修改采集策略 → src/crawler.py
-  - 如需修改 AI 分析逻辑 → src/ai_client.py + config/prompt_system.txt
-  - 如需修改推送方式 → src/feishu_bot.py
-  - 如需修改配置 → config/ 目录下的各配置文件
+  调试预览：  DRY_RUN=1 python main.py
 ================================================================================
 """
 
-import os, sys, traceback
+import os
+import sys
+import traceback
 from pathlib import Path
 from datetime import datetime
 
-# 确保 src/ 目录在 Python 搜索路径中（支持从任意目录运行）
 sys.path.insert(0, str(Path(__file__).parent))
 
 from src.config_loader import load_all
@@ -44,32 +35,25 @@ from src.ai_client import ai_analyze
 from src.feishu_bot import (
     send_card,
     send_alert,
+    send_elements_card,
     split_markdown,
     build_summary_card,
     build_source_cards,
+    build_kpi_elements,
+    build_data_table,
+    build_chart_elements,
 )
 
-# 修复 Windows 控制台 emoji 编码问题（仅影响本地 dry run 打印，不影响飞书推送）
 if sys.platform == "win32":
     import io
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 
-# ══════════════════════════════════════════════════════════════
-# 防重复推送机制
-# ══════════════════════════════════════════════════════════════
-
 _STATE_FILE = Path(__file__).parent / ".push_state"
 
 
 def _check_already_pushed(today):
-    """检查今天是否已经推送过，避免重复推送。
-    
-    原理：每次成功推送后在项目根目录写入日期字符串（如 "2026-07-26"）。
-    下次运行时先读取对比，相同则跳过。
-    此文件已在 .gitignore 中排除，不会提交到仓库。
-    """
     try:
         if _STATE_FILE.exists():
             return _STATE_FILE.read_text(encoding="utf-8").strip() == today
@@ -79,47 +63,34 @@ def _check_already_pushed(today):
 
 
 def _mark_pushed(today):
-    """标记今天已推送。"""
     _STATE_FILE.write_text(today, encoding="utf-8")
 
 
-# ══════════════════════════════════════════════════════════════
-# 主流程
-# ══════════════════════════════════════════════════════════════
-
 def run():
-    """执行一次完整的情报推送流程。
-    
-    步骤：
-      1. 防重复检查
-      2. 加载所有配置
-      3. 采集信源 → 去重排序
-      4. AI 分析 → 生成报告
-      5. 推送飞书卡片（摘要 + 正文 + 信源列表）
-    """
     td = datetime.now()
-    today_full  = td.strftime("%Y-%m-%d")       # 完整日期：2026-07-26
-    today_short = today_full.split("-")[1]      # 月份：07（用于信源卡片标题）
-    dry = bool(os.environ.get("DRY_RUN"))       # DRY_RUN 模式：只打印不推送
+    today_full = td.strftime("%Y-%m-%d")
+    today_short = today_full.split("-")[1]
+    dry = bool(os.environ.get("DRY_RUN"))
 
-    # ── 防重复：今天已经推过则跳过 ──
     if not dry and _check_already_pushed(today_full):
         print(f"[SKIP] {today_full} 已推送过，跳过本次执行")
         return
 
-    # ── 加载配置 ──
-    config_dir  = Path(__file__).parent / "config"
-    cfg         = load_all(config_dir)
-    settings    = cfg["settings"]
-    app_id      = cfg["app_id"]
-    app_secret  = cfg["app_secret"]
-    receive_id  = cfg["receive_id"]
-    report_title = settings.get("report_title", "每日情报")  # 卡片标题（可配置）
+    config_dir = Path(__file__).parent / "config"
+    cfg = load_all(config_dir)
+    settings = cfg["settings"]
+    app_id = cfg["app_id"]
+    app_secret = cfg["app_secret"]
+    receive_id = cfg["receive_id"]
+    report_title = settings.get("report_title", "每日情报")
 
-    # ══════════════════════════════════════════════════════
-    # [1/3] 采集新闻
-    # ══════════════════════════════════════════════════════
-    print("[1/3] 采集资讯...")
+    enable_data = settings.get("enable_market_data", True)
+    enable_charts = settings.get("enable_charts", True)
+
+    # ============================================================
+    # [1/5] 采集新闻
+    # ============================================================
+    print("[1/5] 采集资讯...")
     articles = search_all(
         cfg["sources"],
         settings["ceid_map"],
@@ -127,32 +98,80 @@ def run():
     )
     print(f"  采集完成: {len(articles)} 篇")
 
-    # 无新闻时的处理：推送空消息或预览提示
     if not articles:
         if dry:
             print(f"\n=== 今日无新闻 ===\n{settings.get('no_news_text')}\n")
         else:
-            send_card(app_id, app_secret, receive_id,
-                      "No News",
+            send_card(app_id, app_secret, receive_id, "No News",
                       settings.get("no_news_text", ""),
                       settings.get("no_news_card_color", "red"))
         return
 
-    # ══════════════════════════════════════════════════════
-    # [2/3] AI 分析
-    # ══════════════════════════════════════════════════════
-    print("[2/3] AI 分析...")
+    # ============================================================
+    # [2/5] 采集量化数据
+    # ============================================================
+    market_data = None
+    if enable_data:
+        print("[2/5] 采集量化数据...")
+        try:
+            from src.data_fetcher import fetch_market_data, get_sample_data
+            market_data = fetch_market_data()
+            if not market_data.get("items"):
+                market_data = get_sample_data()
+            n = len(market_data.get("items", []))
+            print(f"  量化数据: {n} 项")
+            for e in market_data.get("errors", []):
+                print(f"  [WARN] {e}")
+        except Exception as e:
+            print(f"  [WARN] 量化数据采集失败: {e}")
+            try:
+                from src.data_fetcher import get_sample_data
+                market_data = get_sample_data()
+            except Exception:
+                pass
+    else:
+        print("[2/5] 量化数据采集已禁用")
+
+    # ============================================================
+    # [3/5] AI 分析
+    # ============================================================
+    print("[3/5] AI 分析...")
     ai_result = ai_analyze(articles, cfg)
     print(f"  分析完成 (raw={ai_result.get('raw')})")
+    si = ai_result.get("sentiment_index")
+    if si is not None:
+        print(f"  情绪指数: {si:+.1f}/10")
 
-    # ══════════════════════════════════════════════════════
-    # [3/3] 推送飞书卡片
-    # ══════════════════════════════════════════════════════
-    print("[3/3] 推送飞书卡片...")
+    # ============================================================
+    # [4/5] 渲染图表
+    # ============================================================
+    chart_specs = []
+    if enable_charts and market_data:
+        print("[4/5] 渲染图表...")
+        try:
+            from src.chart_renderer import render_price_trend, render_change_bars
+            history = market_data.get("history", {})
+            for secid, label in [("CU0", "沪铜主力"), ("AL0", "沪铝主力")]:
+                p = render_price_trend(history, secid, label)
+                if p:
+                    chart_specs.append((label, p))
+                    print(f"  [OK] 趋势图: {label}")
+            p2 = render_change_bars(market_data.get("items", []))
+            if p2:
+                chart_specs.append(("今日涨跌幅", p2))
+                print("  [OK] 涨跌幅柱状图")
+        except Exception as e:
+            print(f"  [WARN] 图表渲染失败: {e}")
+    else:
+        print("[4/5] 图表渲染已跳过")
 
-    card_limit = settings.get("card_char_limit", 4500)  # 单卡片最大字符数
+    # ============================================================
+    # [5/5] 推送飞书卡片
+    # ============================================================
+    print("[5/5] 推送飞书卡片...")
+    card_limit = settings.get("card_char_limit", 4500)
 
-    # Card 1: 摘要卡片（核心结论 + 关键要点）
+    # -- Card 1: 摘要卡片 --
     st, sc, scol = build_summary_card(ai_result, today_full, settings)
     if dry:
         print(f"\n=== {st} ({scol}) ===\n{sc}\n")
@@ -160,7 +179,49 @@ def run():
         send_card(app_id, app_secret, receive_id, st, sc, scol)
     print("  [OK] 摘要卡片")
 
-    # Card 2+: 报告正文（8 模块 Markdown，可能拆成多张卡片）
+    # -- Card 2: KPI 看板卡片（量化数据） --
+    if market_data and market_data.get("items"):
+        kpi_elems = build_kpi_elements(market_data, settings)
+        data_tbl = build_data_table(market_data)
+        if kpi_elems:
+            kpi_title = f"市场数据看板 - {today_full}"
+            elements = kpi_elems[:]
+            if data_tbl:
+                elements.append({"tag": "hr"})
+                elements.append({"tag": "markdown", "content": "## 数据明细\n\n" + data_tbl})
+                ts = market_data.get("timestamp", "")
+                if ts:
+                    elements.append({"tag": "note",
+                                     "elements": [{"tag": "plain_text",
+                                                   "content": f"数据采集时间: {ts}"}]})
+            if dry:
+                print(f"\n=== {kpi_title} ===\n[KPI看板 + 数据明细表]\n")
+            else:
+                send_elements_card(app_id, app_secret, receive_id, kpi_title,
+                                   elements, settings.get("kpi_card_color", "blue"))
+            print("  [OK] KPI 看板卡片")
+
+    # -- Card 3: 图表卡片 --
+    if chart_specs and not dry:
+        image_keys = []
+        for label, path in chart_specs:
+            key = send_upload(app_id, app_secret, path)
+            if key:
+                image_keys.append((label, key))
+                print(f"  [OK] 图片上传: {label}")
+            else:
+                print(f"  [WARN] 图片上传失败: {label}")
+        if image_keys:
+            chart_elems = build_chart_elements(image_keys, settings)
+            chart_title = f"量化图表 - {today_full}"
+            send_elements_card(app_id, app_secret, receive_id, chart_title,
+                               chart_elems, settings.get("chart_card_color", "wathet"))
+            print("  [OK] 图表卡片")
+    elif chart_specs and dry:
+        for label, path in chart_specs:
+            print(f"\n=== 图表: {label} ===\n{path}\n")
+
+    # -- Card 4+: 报告正文 --
     body = (ai_result.get("text", "") if ai_result.get("raw")
             else ai_result.get("sections", ""))
     chunks = split_markdown(body, card_limit)
@@ -175,7 +236,7 @@ def run():
                       settings.get("report_card_color", "green"))
         print(f"  [OK] {title}")
 
-    # Cards: 信源列表（按地区分组，可能拆成多张）
+    # -- Cards: 信源列表 --
     for title, content, color in build_source_cards(articles, today_short, settings):
         if dry:
             print(f"\n=== {title} ({color}) ===\n{content}\n")
@@ -183,25 +244,24 @@ def run():
             send_card(app_id, app_secret, receive_id, title, content, color)
         print(f"  [OK] {title}")
 
-    # ── 标记已推送 ──
     if not dry:
         _mark_pushed(today_full)
 
     print("Done!")
 
 
-# ══════════════════════════════════════════════════════════════
-# 全局异常捕获 & 飞书故障告警
-# ══════════════════════════════════════════════════════════════
+def send_upload(app_id, app_secret, path):
+    """上传图片并返回 image_key（封装 upload_image）。"""
+    from src.feishu_bot import upload_image
+    return upload_image(app_id, app_secret, path)
+
 
 if __name__ == "__main__":
     try:
         run()
     except Exception:
-        # 出现任何未预料的异常 → 打印堆栈 + 尝试推送飞书告警
         tb = traceback.format_exc()
         print(f"[FATAL] {tb}")
-
         try:
             config_dir = Path(__file__).parent / "config"
             cfg = load_all(config_dir)
@@ -209,6 +269,5 @@ if __name__ == "__main__":
                 send_alert(cfg["app_id"], cfg["app_secret"], cfg["receive_id"],
                            f"脚本运行异常:\n```\n{tb[-1500:]}\n```")
         except Exception:
-            pass  # 告警推送失败也不影响异常抛出
-
-        sys.exit(1)  # 返回非零退出码，让 GitHub Actions 感知到失败
+            pass
+        sys.exit(1)

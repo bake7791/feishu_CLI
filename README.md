@@ -1,75 +1,95 @@
-﻿# 铜及预焙阳极每日情报自动化推送
+# 铜及预焙阳极每日情报推送 — 企业自建应用增强版
 
-基于飞书企业自建应用机器人 + GitHub Actions + GitHub Models 免费 GPT-4o 的铜价及预焙阳极每日情报自动化推送系统。
+基于飞书企业自建应用 + GitHub Actions + GitHub Models 免费 GPT-4o 的自动化情报推送系统，新增**量化数据采集**与**图表可视化**能力。
 
-## 关注标的
+## 与群机器人 Webhook 版的区别
 
-- **铜**：LME/上海铜价走势、铜精矿 TC/RC、全球供需、冶炼厂动态、主要产铜国（智利、秘鲁）政策
-- **预焙阳极**：国内预焙阳极价格、煤沥青/石油焦等原料行情、铝用碳素行业动态
+| | 企业自建应用版（本项目） | 群机器人 Webhook 版 |
+|---|---|---|
+| 推送目标 | 指定用户（open_id） | 群聊（所有成员可见） |
+| 鉴权方式 | tenant_access_token | HMAC-SHA256 签名 |
+| 所需凭证 | App ID + App Secret + Receive ID | Webhook URL + 签名密钥 |
+| **图片推送** | **支持（im/v1/images 上传 + 卡片嵌入）** | 不支持 |
+| **KPI 看板** | **支持（column_set 多列布局）** | 仅 markdown |
+| **量化图表** | **支持（matplotlib PNG 趋势图/柱状图）** | 仅 Unicode 字符图 |
+| 部署复杂度 | 3 步（创建应用、申请权限、发布） | 1 步（创建机器人获取 URL） |
 
-## 功能概述
+## 增强能力
 
-- **多语言信源采集**：中文 / 英文 / 西班牙语 Google News + 自定义 RSS（上海有色网等）
-- **AI 智能分析**：GitHub Models 免费 GPT-4o 结构化生成摘要 + 五段式简报
-- **飞书卡片推送**：企业自建应用机器人，通过 open_id 推送到指定用户
-- **定时自动化**：GitHub Actions 每日北京时间 09:00 自动执行
-- **崩溃告警**：脚本异常自动推送飞书故障通知
+### 量化数据采集
+- 沪铜主力、沪铝主力（东方财富期货行情）
+- LME 铜、美元指数（新浪财经外盘行情）
+- 近 7 日 K 线历史数据（趋势图用）
 
-## 三步部署
+### 图表可视化（发挥自建应用发图优势）
+- 近 7 日价格趋势折线图（带涨跌底色 + 最新价标注）
+- 当日涨跌幅横向柱状图（涨红跌绿）
+- 中文字体自动检测（Noto CJK / 微软雅黑），找不到自动降级英文
 
-### 1. Fork 本仓库
+### AI 情绪量化
+- 综合情绪指数（-10 偏空 ~ +10 偏多）
+- 重要新闻逐条情绪打分 + 影响星级
 
-点击右上角 Fork → 选择你的账号。
+## 推送卡片结构
 
-### 2. 复制配置模板
+1. **摘要卡片** — 核心结论 + 情绪指数 + 关键要点
+2. **KPI 看板卡片** — column_set 多列价格看板 + 数据明细表（新增）
+3. **图表卡片** — 趋势折线图 + 涨跌幅柱状图 PNG（新增）
+4. **报告正文卡片** — 8 模块决策级 Markdown
+5. **信源列表卡片** — 按地区分组
 
-```bash
-cd config
-cp settings.example.json settings.json
-cp sources.example.json sources.json
-cp prompt_system.example.txt prompt_system.txt
-cp prompt_user.example.txt prompt_user.txt
-cp prompt_fallback.example.txt prompt_fallback.txt
-```
+## 四步部署
 
-### 3. 配置 GitHub Secrets
+### 1. 创建飞书企业自建应用
+1. 进入[飞书开放平台](https://open.feishu.cn/) → 创建企业自建应用
+2. 申请权限：`im:message`、`im:image`
+3. 发布应用版本，等待企业管理员审批
+4. 记录 **App ID** 和 **App Secret**
+5. 获取接收者 **open_id**（通讯录中查看用户详情）
 
-进入仓库 **Settings → Secrets and variables → Actions**，添加三个密钥：
+### 2. Fork 本仓库
+
+### 3. 配置 4 个 GitHub Secrets
 
 | Secret 名称 | 值 |
-|-------------|-----|
-| `FEISHU_APP_ID` | 飞书应用 App ID |
-| `FEISHU_APP_SECRET` | 飞书应用 App Secret |
-| `FEISHU_RECEIVE_ID` | 消息接收者的 open_id |
+|---|---|
+| `FEISHU_APP_ID` | 应用 App ID |
+| `FEISHU_APP_SECRET` | 应用 App Secret |
+| `FEISHU_RECEIVE_ID` | 接收者 open_id |
+| `AI_API_TOKEN` | GitHub Token（免费 GPT-4o）或 OpenAI Key |
 
-## 如何切换关注品种
+### 4. 启用 Actions
+Fork 后在仓库 Settings → Actions → 允许 workflows 运行。
+每日 UTC 1:00（北京时间 9:00）自动推送。
 
-所有与品种相关的配置都在 `config/` 目录下，**无需修改任何 Python 代码**：
+## 本地测试
 
-| 想改什么 | 改哪个文件 |
-|----------|-----------|
-| 信源 / 检索关键词 | `sources.json` |
-| AI 分析角色与输出框架 | `prompt_system.txt` |
-| AI 提问方式 | `prompt_user.txt` |
-| AI 降级备用提示词 | `prompt_fallback.txt` |
-| 地区映射 / 卡片样式 / 屏蔽词 | `settings.json` |
+```bash
+$env:FEISHU_APP_ID="cli_xxx"
+$env:FEISHU_APP_SECRET="xxx"
+$env:FEISHU_RECEIVE_ID="ou_xxx"
+$env:AI_API_TOKEN="ghp_xxx"
+$env:DRY_RUN=1; python main.py    # 预览不推送（使用示例数据）
+python main.py                    # 正式推送
+```
 
 ## 项目结构
 
 ```
-├── .github/workflows/daily_report.yml
-├── config/                          # 配置文件（换品种只改这里）
-│   ├── settings.example.json
-│   ├── sources.example.json
-│   ├── prompt_system.example.txt
-│   ├── prompt_user.example.txt
-│   └── prompt_fallback.example.txt
-├── src/                             # 功能模块（无需改动）
-│   ├── config_loader.py
-│   ├── crawler.py
-│   ├── ai_client.py
-│   ├── feishu_bot.py
-│   └── utils.py
-├── main.py
-└── .gitignore
+main.py                    入口：采集→数据→AI→图表→推送
+src/
+  config_loader.py         配置加载与校验
+  crawler.py               新闻采集（Google News + RSS）
+  data_fetcher.py          量化数据采集（新增）
+  chart_renderer.py        matplotlib 图表渲染（新增）
+  ai_client.py             AI 分析 + 情绪量化
+  feishu_bot.py            飞书推送（图片上传 + KPI看板 + 卡片）
+  utils.py                 HTTP 工具 + RSS 日期解析
+config/                    配置文件（.example 模板）
+.github/workflows/         GitHub Actions 定时任务
 ```
+
+## 换品种
+
+修改 config/ 目录下的配置文件，代码无需改动。
+在 `data_fetcher.py` 中调整品种的 secid 映射即可采集不同期货品种。

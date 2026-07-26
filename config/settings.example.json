@@ -1,31 +1,13 @@
 {
   "_comment": [
-    "===== 铜及预焙阳极每日情报 —— 主配置文件 =====",
+    "===== 铜及预焙阳极每日情报 —— 主配置文件（企业自建应用增强版） =====",
     "使用方法：复制此文件为 settings.json，按需修改各项参数",
     "",
-    "【AI 配置】",
-    "  ai_endpoint: AI API 地址（默认 GitHub Models 免费 GPT-4o）",
-    "    如需使用 OpenAI 直连，改为 https://api.openai.com/v1/chat/completions",
-    "  ai_model:    模型名称（gpt-4o / gpt-4o-mini 等）",
-    "  max_tokens:  单次最大输出 token（越长报告越详细，但成本越高）",
-    "  temperature: 0-2，越小越稳定、越大越有创造性（建议 0.3）",
-    "",
-    "【卡片配置】",
-    "  report_title:       飞书卡片标题前缀",
-    "  card_char_limit:    单卡片最大字符数（飞书限制约 4500）",
-    "  * card_color 系列:   各类卡片的顶部色条颜色",
-    "  summary_labels:     摘要卡片的三行标签文字",
-    "",
-    "【信源配置】",
-    "  ceid_map:       Google News 国家/语言映射",
-    "  region_flags:   地区国旗 emoji",
-    "  region_buckets: 信源卡片分组规则",
-    "  skip_keywords:  标题屏蔽词（含这些词的新闻会被过滤）",
-    "  rss_time_formats: RSS 日期解析格式列表",
-    "",
-    "【密钥说明】",
-    "  飞书凭证（FEISHU_APP_ID/APP_SECRET/RECEIVE_ID）和 AI Token",
-    "  从 GitHub Secrets 读取，不写在此文件，避免泄露"
+    "【新增配置】",
+    "  enable_market_data: 是否启用量化数据采集（data_fetcher）",
+    "  enable_charts:      是否启用图表渲染（chart_renderer + 图片上传）",
+    "  kpi_card_color:     KPI 看板卡片头部色",
+    "  chart_card_color:   图表卡片头部色"
   ],
   "_usage": "复制此文件为 settings.json 并修改各项参数",
   "_feishu_note": "飞书企业自建应用凭证通过 GitHub Secrets 注入",
@@ -48,18 +30,9 @@
   },
   "region_buckets": {
     "_desc": "地区分组规则",
-    "中国": [
-      "CN"
-    ],
-    "美洲": [
-      "US",
-      "CL"
-    ],
-    "其他": [
-      "GB",
-      "AU",
-      "GLOBAL"
-    ]
+    "中国": ["CN"],
+    "美洲": ["US", "CL"],
+    "其他": ["GB", "AU", "GLOBAL"]
   },
   "ai_endpoint": "https://models.inference.ai.azure.com/chat/completions",
   "_ai_endpoint_openai": "若使用 OpenAI 直连，改为 https://api.openai.com/v1/chat/completions",
@@ -74,11 +47,11 @@
   "source_card_color_2": "purple",
   "no_news_card_color": "red",
   "no_news_text": "今日暂无铜及预焙阳极相关新闻。",
-  "summary_labels": [
-    "核心结论",
-    "关键数据",
-    "决策建议"
-  ],
+  "summary_labels": ["核心结论", "关键数据", "决策建议"],
+  "kpi_card_color": "blue",
+  "chart_card_color": "wathet",
+  "enable_market_data": true,
+  "enable_charts": true,
   "skip_keywords": [
     "stock",
     "share price",

@@ -1,15 +1,14 @@
-﻿name: "燃料电池每日情报推送"
+name: 铜及预焙阳极每日情报推送 (企业自建应用)
 
 on:
   schedule:
-    - cron: "0 1 * * *"
+    - cron: "0 1 * * *"    # UTC 1:00 = 北京时间 9:00
   workflow_dispatch:
 
 jobs:
   daily-report:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-
     permissions:
       contents: read
 
@@ -17,10 +16,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install system fonts (中文图表)
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install matplotlib
 
       - name: Run Report
         env:
@@ -35,4 +40,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: "${{ github.run_id }}-crash-log"
-          path: .push_state
+          path: |
+            .push_state
+            /tmp/charts_*
+          if-no-files-found: ignore
