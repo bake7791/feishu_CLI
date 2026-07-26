@@ -38,7 +38,7 @@ from src.feishu_bot import (
     send_elements_card,
     split_markdown,
     build_summary_card,
-    build_source_cards,
+    # build_source_cards,
     build_kpi_elements,
     build_data_table,
     build_chart_elements,
@@ -238,13 +238,13 @@ def run():
                       settings.get("report_card_color", "green"))
         print(f"  [OK] {title}")
 
-    # -- Cards: 信源列表 --
-    for title, content, color in build_source_cards(articles, today_short, settings):
-        if dry:
-            print(f"\n=== {title} ({color}) ===\n{content}\n")
-        else:
-            send_card(app_id, app_secret, receive_id, title, content, color)
-        print(f"  [OK] {title}")
+    # -- Cards: 信源列表（已禁用） --
+    # for title, content, color in build_source_cards(articles, today_short, settings):
+    #     if dry:
+    #         print(f"\n=== {title} ({color}) ===\n{content}\n")
+    #     else:
+    #         send_card(app_id, app_secret, receive_id, title, content, color)
+    #     print(f"  [OK] {title}")
 
     if not dry:
         _mark_pushed(today_full)
