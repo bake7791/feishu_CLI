@@ -84,6 +84,7 @@ def run():
     receive_id = cfg["receive_id"]
     report_title = settings.get("report_title", "每日情报")
 
+    data_items = cfg.get("data_items", [])
     enable_data = settings.get("enable_market_data", True)
     enable_charts = settings.get("enable_charts", True)
 
@@ -115,9 +116,9 @@ def run():
         print("[2/5] 采集量化数据...")
         try:
             from src.data_fetcher import fetch_market_data, get_sample_data
-            market_data = fetch_market_data()
+            market_data = fetch_market_data(data_items)
             if not market_data.get("items"):
-                market_data = get_sample_data()
+                market_data = get_sample_data(data_items)
             n = len(market_data.get("items", []))
             print(f"  量化数据: {n} 项")
             for e in market_data.get("errors", []):
@@ -126,7 +127,7 @@ def run():
             print(f"  [WARN] 量化数据采集失败: {e}")
             try:
                 from src.data_fetcher import get_sample_data
-                market_data = get_sample_data()
+                market_data = get_sample_data(data_items)
             except Exception:
                 pass
     else:
