@@ -395,6 +395,19 @@ def build_source_cards(articles, today, settings):
 # KPI 看板卡片（新增 — 发挥自建应用 column_set 优势）
 # ================================================================
 
+def _decimals_for(item):
+    """根据品种类型决定小数位数：宏观指数/无单位值用 2 位，商品价格用整数。
+
+    美元指数这类宏观指标价格约 104，但需要小数精度（104.20），
+    不能用"≥100 取整"的粗暴判断。按 unit 和 category 区分更准确。
+    """
+    unit = item.get("unit", "")
+    category = item.get("category", "")
+    if not unit or category == "macro":
+        return 2
+    return 0
+
+
 def build_kpi_elements(market_data, settings):
     """构建 KPI 看板的 column_set 元素列表。
 
@@ -414,11 +427,12 @@ def build_kpi_elements(market_data, settings):
         pct = item.get("change_pct", 0) or 0
         arrow = "\u25b2" if change >= 0 else "\u25bc"
         price = item["price"]
-        price_str = f"{price:,.0f}" if price >= 100 else f"{price:,.2f}"
+        dec = _decimals_for(item)
+        price_str = f"{price:,.{dec}f}"
         unit = item.get("unit", "")
         content = (
             f"**{item['name']}**\n"
-            f"{price_str} {unit}\n"
+            f"{price_str}{' ' + unit if unit else ''}\n"
             f"{arrow} {pct:+.2f}%\n"
             f"*{item.get('source', '')}*"
         )
@@ -451,12 +465,14 @@ def build_data_table(market_data):
         pct = item.get("change_pct")
         arrow = "\u25b2" if change >= 0 else "\u25bc"
         price = item["price"]
-        price_str = f"{price:,.0f}" if price >= 100 else f"{price:,.2f}"
+        dec = _decimals_for(item)
+        price_str = f"{price:,.{dec}f}"
         unit = item.get("unit", "")
-        change_str = f"{arrow}{abs(change):,.0f}" if change else "-"
+        change_str = f"{arrow}{abs(change):,.{dec}f}" if change else "-"
         pct_str = f"{pct:+.2f}%" if pct is not None else "-"
+        unit_col = f" {unit}" if unit else ""
         lines.append(
-            f"| {item['name']} | {price_str} {unit} | {change_str} | {pct_str} | {item.get('source', '')} |"
+            f"| {item['name']} | {price_str}{unit_col} | {change_str} | {pct_str} | {item.get('source', '')} |"
         )
     return "\n".join(lines)
 
