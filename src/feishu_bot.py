@@ -447,34 +447,60 @@ def build_kpi_elements(market_data, settings):
 
 
 def build_data_table(market_data):
-    """构建数据明细 Markdown 表格。
+    """构建数据明细的多列布局元素（飞书卡片原生 column_set 表格）。
+
+    飞书卡片 markdown 不支持表格渲染，改用 column_set 多列布局，
+    每个品种一行，列宽固定，保证对齐。
 
     Returns:
-        str: Markdown 表格文本，空字符串表示无数据
+        list: 卡片元素列表，空列表表示无数据
     """
     items = market_data.get("items", [])
     if not items:
-        return ""
+        return []
 
-    lines = [
-        "| \u54c1\u79cd | \u6700\u65b0\u4ef7 | \u6da8\u8dcc | \u6da8\u8dcc\u5e45 | \u6765\u6e90 |",
-        "|------|--------|------|--------|------|",
-    ]
+    elements = []
+
+    # 表头行
+    elements.append({
+        "tag": "column_set",
+        "columns": [
+            {"tag": "column", "width": "weighted", "weight": 1,
+             "elements": [{"tag": "markdown", "content": "**\u54c1\u79cd**"}]},
+            {"tag": "column", "width": "weighted", "weight": 1,
+             "elements": [{"tag": "markdown", "content": "**\u6700\u65b0\u4ef7**"}]},
+            {"tag": "column", "width": "weighted", "weight": 1,
+             "elements": [{"tag": "markdown", "content": "**\u6da8\u8dcc**"}]},
+            {"tag": "column", "width": "weighted", "weight": 1,
+             "elements": [{"tag": "markdown", "content": "**\u6765\u6e90**"}]},
+        ],
+    })
+
+    # 数据行
     for item in items:
         change = item.get("change", 0) or 0
-        pct = item.get("change_pct")
+        pct = item.get("change_pct", 0) or 0
         arrow = "\u25b2" if change >= 0 else "\u25bc"
         price = item["price"]
         dec = _decimals_for(item)
         price_str = f"{price:,.{dec}f}"
         unit = item.get("unit", "")
-        change_str = f"{arrow}{abs(change):,.{dec}f}" if change else "-"
-        pct_str = f"{pct:+.2f}%" if pct is not None else "-"
         unit_col = f" {unit}" if unit else ""
-        lines.append(
-            f"| {item['name']} | {price_str}{unit_col} | {change_str} | {pct_str} | {item.get('source', '')} |"
-        )
-    return "\n".join(lines)
+        change_str = f"{arrow}{abs(change):,.{dec}f}" if change else "-"
+        elements.append({
+            "tag": "column_set",
+            "columns": [
+                {"tag": "column", "width": "weighted", "weight": 1,
+                 "elements": [{"tag": "markdown", "content": item["name"]}]},
+                {"tag": "column", "width": "weighted", "weight": 1,
+                 "elements": [{"tag": "markdown", "content": f"{price_str}{unit_col}"}]},
+                {"tag": "column", "width": "weighted", "weight": 1,
+                 "elements": [{"tag": "markdown", "content": f"{change_str}\n{pct:+.2f}%"}]},
+                {"tag": "column", "width": "weighted", "weight": 1,
+                 "elements": [{"tag": "markdown", "content": item.get("source", "")}]},
+            ],
+        })
+    return elements
 
 
 def build_chart_elements(image_keys, settings):
