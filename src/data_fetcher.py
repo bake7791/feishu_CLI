@@ -115,6 +115,38 @@ def _fetch_em_kline(secid, days=7):
     return {"dates": dates[-days:], "prices": prices[-days:]} if prices else None
 
 
+
+
+_SINA_URL = "https://hq.sinajs.cn/list={}"
+_SINA_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "Referer": "https://finance.sina.com.cn/",
+}
+
+
+def _fetch_sina_futures(symbols):
+    url = _SINA_URL.format(",".join(symbols))
+    text = http_get(url, headers=_SINA_HEADERS, timeout=10)
+    results = {}
+    for line in text.strip().splitlines():
+        if not line.strip():
+            continue
+        m = re.match(r'var hq_str_(\w+)="(.+)"', line.strip())
+        if not m:
+            continue
+        sym = m.group(1)
+        fields = m.group(2).split(",")
+        if len(fields) < 4:
+            continue
+        try:
+            price = float(fields[3]) if fields[3] else None
+            prev_close = float(fields[2]) if fields[2] else None
+        except (ValueError, TypeError):
+            continue
+        if price and price > 0:
+            results[sym] = {"price": price, "prev_close": prev_close or price}
+    return results
+
 # ================================================================
 # 标准化数据项构建
 # ================================================================
@@ -151,17 +183,28 @@ def _fetch_copper():
                 history["HGF"] = d["history"]
     except Exception:
         pass
-    # 国内主力：沪铜
+    # 国内主力：沪铜（东方财富 -> 新浪 fallback）
+    cu_ok = False
     try:
         d = _fetch_em_quote(f"{_EM_SHFE}.CU0")
         if d:
             items.append(_make_item("沪铜主力", d["price"], d["prev_close"],
                                     "元/吨", "SHFE", "CN", "copper"))
+            cu_ok = True
         k = _fetch_em_kline(f"{_EM_SHFE}.CU0")
         if k:
             history["CU0"] = k
     except Exception:
         pass
+    if not cu_ok:
+        try:
+            sina = _fetch_sina_futures(["CU0"])
+            if "CU0" in sina:
+                sd = sina["CU0"]
+                items.append(_make_item("沪铜主力", sd["price"], sd["prev_close"],
+                                        "元/吨", "SHFE", "CN", "copper"))
+        except Exception:
+            pass
     return items, history
 
 
@@ -169,16 +212,27 @@ def _fetch_aluminum():
     """铝价：沪铝（阳极下游，国内主力）。"""
     items = []
     history = {}
+    al_ok = False
     try:
         d = _fetch_em_quote(f"{_EM_SHFE}.AL0")
         if d:
             items.append(_make_item("沪铝主力", d["price"], d["prev_close"],
                                     "元/吨", "SHFE", "CN", "aluminum"))
+            al_ok = True
         k = _fetch_em_kline(f"{_EM_SHFE}.AL0")
         if k:
             history["AL0"] = k
     except Exception:
         pass
+    if not al_ok:
+        try:
+            sina = _fetch_sina_futures(["AL0"])
+            if "AL0" in sina:
+                sd = sina["AL0"]
+                items.append(_make_item("沪铝主力", sd["price"], sd["prev_close"],
+                                        "元/吨", "SHFE", "CN", "aluminum"))
+        except Exception:
+            pass
     return items, history
 
 
