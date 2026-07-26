@@ -182,13 +182,14 @@ def run():
     # -- Card 2: KPI 看板卡片（量化数据） --
     if market_data and market_data.get("items"):
         kpi_elems = build_kpi_elements(market_data, settings)
-        data_tbl = build_data_table(market_data)
+        data_elems = build_data_table(market_data)
         if kpi_elems:
             kpi_title = f"市场数据看板 - {today_full}"
             elements = kpi_elems[:]
-            if data_tbl:
+            if data_elems:
                 elements.append({"tag": "hr"})
-                elements.append({"tag": "markdown", "content": "## 数据明细\n\n" + data_tbl})
+                elements.append({"tag": "markdown", "content": "**数据明细**"})
+                elements.extend(data_elems)
                 ts = market_data.get("timestamp", "")
                 if ts:
                     elements.append({"tag": "note",
