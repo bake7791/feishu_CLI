@@ -151,7 +151,7 @@ def run():
         try:
             from src.chart_renderer import render_price_trend, render_change_bars
             history = market_data.get("history", {})
-            for secid, label in [("CU0", "沪铜主力"), ("AL0", "沪铝主力")]:
+            for secid, label in [("HGF", "COMEX铜"), ("CU0", "沪铜主力"), ("AL0", "沪铝主力")]:
                 p = render_price_trend(history, secid, label)
                 if p:
                     chart_specs.append((label, p))
