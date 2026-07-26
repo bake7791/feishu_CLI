@@ -314,11 +314,13 @@ def build_summary_card(ai_result, today_full, settings):
     # 情绪指数（新增）
     sentiment = ai_result.get("sentiment_index")
     if sentiment is not None:
+        bar_on = "\u258c"
+        bar_off = "\u2592"
         lines += ["", "## \u4eca\u65e5\u60c5\u7eea", ""]
         lines.append(f"\u7efc\u5408\u60c5\u7eea\u6307\u6570: **{sentiment:+.1f}/10**")
         bars_filled = int((sentiment + 10) / 20 * 10)
         bars_filled = max(0, min(10, bars_filled))
-        lines.append(f"`{'\u258c' * bars_filled}{'\u2592' * (10 - bars_filled)}`")
+        lines.append(f"`{bar_on * bars_filled}{bar_off * (10 - bars_filled)}`")
 
     lines += ["", "## \u4eca\u65e5\u91cd\u70b9", ""]
     for i, kp in enumerate(key_points, 1):
