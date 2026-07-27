@@ -1,67 +1,67 @@
 ﻿{
-  "_comment": "信源配置 - 铜及预焙阳极行业日报",
+  "_comment": "信源配置 - 生物燃料&SAF可持续航空燃料行业日报",
   "_usage": "复制此文件为 sources.json，按需修改 queries 和 feeds",
   "max_articles": 80,
 
   "queries": [
     {
-      "_desc": "全球铜价走势",
-      "query": "copper price LME COMEX forecast",
+      "_desc": "国际原油、生物燃料外盘价格走势",
+      "query": "biodiesel HVO SAF price Brent crude forecast",
       "hl": "en-US", "gl": "US"
     },
     {
-      "_desc": "全球铜矿供给",
-      "query": "copper mine production supply disruption",
+      "_desc": "全球废弃油脂/生物原料供给扰动",
+      "query": "UCO tallow soybean oil feedstock supply shortage",
       "hl": "en-US", "gl": "US"
     },
     {
-      "_desc": "中国铜价行情",
-      "query": "铜价 沪铜 走势 行情",
+      "_desc": "国内生物柴油、SAF原料行情",
+      "query": "废弃油脂 生物柴油 豆油 菜油 价格走势",
       "hl": "zh-CN", "gl": "CN"
     },
     {
-      "_desc": "中国铜冶炼与库存",
-      "query": "铜冶炼 库存 加工费 TC/RC",
+      "_desc": "国内生物炼化产能、库存、加工成本",
+      "query": "生物柴油厂开工率 原料库存 加工利润",
       "hl": "zh-CN", "gl": "CN"
     },
     {
-      "_desc": "中国预焙阳极价格",
-      "query": "预焙阳极 价格 碳素 石油焦",
+      "_desc": "国内油脂原料成本（UCO/棕榈油/豆油）",
+      "query": "餐厨废油 棕榈油 豆油 报价 到货",
       "hl": "zh-CN", "gl": "CN"
     },
     {
-      "_desc": "智利铜矿动态",
-      "query": "cobre chileno mineria produccion",
-      "hl": "es-CL", "gl": "CL"
+      "_desc": "欧盟生物燃料政策、掺混强制标准",
+      "query": "EU biodiesel mandate SAF feedstock policy import",
+      "hl": "en-GB", "gl": "EU"
     },
     {
-      "_desc": "全球铝用碳素",
-      "query": "prebaked anode carbon aluminum smelting",
-      "hl": "en-US", "gl": "US"
+      "_desc": "全球可持续航空燃料SAF产业动态",
+      "query": "SAF production capacity HEFA supply gap 2030 outlook",
+      "hl": "en-US", "gl": "GLOBAL"
     },
     {
-      "_desc": "铜废料与再生铜",
-      "query": "copper scrap recycling secondary",
-      "hl": "en-US", "gl": "US"
+      "_desc": "再生油脂、废油脂进出口贸易",
+      "query": "used cooking oil import export trade tariff",
+      "hl": "en-US", "gl": "GLOBAL"
     }
   ],
 
   "feeds": [
     {
-      "_desc": "上海有色网 - 铜快讯",
-      "name": "SMM 铜",
-      "url": "https://news.smm.cn/rss/copper",
+      "_desc": "卓创资讯 - 油脂生物燃料国内快讯",
+      "name": "卓创 生物燃料&油脂",
+      "url": "https://rss.zcinfo.com/feed/oil",
       "region": "CN"
     },
     {
-      "_desc": "上海有色网 - 铝快讯（预焙阳极下游）",
-      "name": "SMM 铝",
-      "url": "https://news.smm.cn/rss/aluminum",
+      "_desc": "金联创 - 生物柴油原料产业链快讯",
+      "name": "金联创 再生油脂",
+      "url": "https://www.lianchuang.com/rss/biofuel",
       "region": "CN"
     },
     {
-      "_desc": "Fastmarkets - 铜（国际报价机构）",
-      "name": "Fastmarkets",
+      "_desc": "Fastmarkets - 全球生物燃料/SAF国际权威报价资讯",
+      "name": "Fastmarkets Biofuels",
       "url": "https://www.fastmarkets.com/feed/",
       "region": "GLOBAL"
     }
