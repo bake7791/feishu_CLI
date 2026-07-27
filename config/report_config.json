@@ -1,4 +1,4 @@
-﻿{
+{
   "_comment": [
     "================================================================",
     " 报告配置文件 (report_config.json)",
@@ -23,7 +23,6 @@
     "================================================================"
   ],
   "_usage": "复制此文件为 report_config.json，按需修改 data_items 和 news.topics",
-
   "report": {
     "title": "铜及预焙阳极每日情报报告",
     "industry": "铜及预焙阳极",
@@ -36,14 +35,13 @@
     "chart_card_color": "wathet",
     "no_news_text": "今日暂无相关新闻。"
   },
-
   "data_items": [
     {
-      "_desc": "COMEX铜 —— 国际铜价基准，Yahoo Finance 全球可用",
+      "_desc": "COMEX铜 — 国际铜价基准（Yahoo Finance 返回美元/磅）",
       "name": "COMEX铜",
       "source": "yahoo",
       "symbol": "HG=F",
-      "unit": "美分/磅",
+      "unit": "美元/磅",
       "exchange": "COMEX",
       "region": "GLOBAL",
       "category": "copper",
@@ -87,7 +85,6 @@
       "enabled": true
     }
   ],
-
   "news": {
     "topics": [
       "copper price forecast",
@@ -111,20 +108,36 @@
       "partner content"
     ]
   },
-
   "ai": {
     "endpoint": "https://models.inference.ai.azure.com/chat/completions",
     "model": "gpt-4o",
     "max_tokens": 4000,
     "temperature": 0.3
   },
-
   "regions": {
-    "US": {"flag": "🇺🇸", "name": "美国"},
-    "CN": {"flag": "🇨🇳", "name": "中国"},
-    "CL": {"flag": "🇨🇱", "name": "智利"},
-    "GB": {"flag": "🇬🇧", "name": "英国"},
-    "AU": {"flag": "🇦🇺", "name": "澳大利亚"},
-    "GLOBAL": {"flag": "🌐", "name": "全球"}
+    "US": {
+      "flag": "🇺🇸",
+      "name": "美国"
+    },
+    "CN": {
+      "flag": "🇨🇳",
+      "name": "中国"
+    },
+    "CL": {
+      "flag": "🇨🇱",
+      "name": "智利"
+    },
+    "GB": {
+      "flag": "🇬🇧",
+      "name": "英国"
+    },
+    "AU": {
+      "flag": "🇦🇺",
+      "name": "澳大利亚"
+    },
+    "GLOBAL": {
+      "flag": "🌐",
+      "name": "全球"
+    }
   }
 }
