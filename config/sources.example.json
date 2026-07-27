@@ -1,60 +1,69 @@
 ﻿{
-  "_comment": "========== 信源配置 - 铜及预焙阳极 ==========",
-  "_usage": "复制此文件为 sources.json 并修改检索词和 RSS 源",
-
+  "_comment": "信源配置 - 铜及预焙阳极行业日报",
+  "_usage": "复制此文件为 sources.json，按需修改 queries 和 feeds",
   "max_articles": 80,
 
   "queries": [
     {
-      "_desc": "全球 - 铜价走势（英文）",
-      "query": "copper price forecast market",
-      "hl": "en-US",
-      "gl": "US"
+      "_desc": "全球铜价走势",
+      "query": "copper price LME COMEX forecast",
+      "hl": "en-US", "gl": "US"
     },
     {
-      "_desc": "全球 - 铜供需分析（英文）",
-      "query": "copper supply demand LME",
-      "hl": "en-US",
-      "gl": "US"
+      "_desc": "全球铜矿供给",
+      "query": "copper mine production supply disruption",
+      "hl": "en-US", "gl": "US"
     },
     {
-      "_desc": "中国 - 铜价行情（中文）",
-      "query": "铜价 走势 行情",
-      "hl": "zh-CN",
-      "gl": "CN"
+      "_desc": "中国铜价行情",
+      "query": "铜价 沪铜 走势 行情",
+      "hl": "zh-CN", "gl": "CN"
     },
     {
-      "_desc": "中国 - 铜供需分析（中文）",
-      "query": "铜 供需 库存 冶炼",
-      "hl": "zh-CN",
-      "gl": "CN"
+      "_desc": "中国铜冶炼与库存",
+      "query": "铜冶炼 库存 加工费 TC/RC",
+      "hl": "zh-CN", "gl": "CN"
     },
     {
-      "_desc": "中国 - 预焙阳极价格（中文）",
-      "query": "预焙阳极 价格 行情",
-      "hl": "zh-CN",
-      "gl": "CN"
+      "_desc": "中国预焙阳极价格",
+      "query": "预焙阳极 价格 碳素 石油焦",
+      "hl": "zh-CN", "gl": "CN"
     },
     {
-      "_desc": "全球 - 铝用阳极/碳素（英文）",
-      "query": "prebaked anode carbon aluminum",
-      "hl": "en-US",
-      "gl": "US"
+      "_desc": "智利铜矿动态",
+      "query": "cobre chileno mineria produccion",
+      "hl": "es-CL", "gl": "CL"
     },
     {
-      "_desc": "智利 - 铜矿/铜价（西班牙语）",
-      "query": "precio del cobre mercado",
-      "hl": "es-CL",
-      "gl": "CL"
+      "_desc": "全球铝用碳素",
+      "query": "prebaked anode carbon aluminum smelting",
+      "hl": "en-US", "gl": "US"
+    },
+    {
+      "_desc": "铜废料与再生铜",
+      "query": "copper scrap recycling secondary",
+      "hl": "en-US", "gl": "US"
     }
   ],
 
   "feeds": [
     {
-      "_desc": "上海有色网 铜 快讯 RSS",
+      "_desc": "上海有色网 - 铜快讯",
       "name": "SMM 铜",
       "url": "https://news.smm.cn/rss/copper",
       "region": "CN"
+    },
+    {
+      "_desc": "上海有色网 - 铝快讯（预焙阳极下游）",
+      "name": "SMM 铝",
+      "url": "https://news.smm.cn/rss/aluminum",
+      "region": "CN"
+    },
+    {
+      "_desc": "Fastmarkets - 铜（国际报价机构）",
+      "name": "Fastmarkets",
+      "url": "https://www.fastmarkets.com/feed/",
+      "region": "GLOBAL"
     }
   ]
 }
