@@ -183,79 +183,94 @@ def run():
     print("[5/5] 推送飞书卡片...")
     card_limit = settings.get("card_char_limit", 4500)
 
-    # -- Card 1: 摘要卡片 --
-    st, sc, scol = build_summary_card(ai_result, today_full, settings)
-    if dry:
-        print(f"\n=== {st} ({scol}) ===\n{sc}\n")
-    else:
-        send_card(app_id, app_secret, receive_id, st, sc, scol)
-    print("  [OK] 摘要卡片")
+    # 从 layout 配置读取卡片顺序和显隐
+    report_cfg = cfg.get("report_config", {})
+    layout_cards = report_cfg.get("layout", {}).get("cards", [])
+    if not layout_cards:
+        layout_cards = [
+            {"id": "summary", "enabled": True, "color": "blue"},
+            {"id": "kpi_dashboard", "enabled": True, "color": "blue"},
+            {"id": "charts", "enabled": True, "color": "wathet"},
+            {"id": "report_body", "enabled": True, "color": "green"},
+        ]
 
-    # -- Card 2: KPI 看板卡片（量化数据） --
-    if market_data and market_data.get("items"):
-        kpi_elems = build_kpi_elements(market_data, settings)
-        data_elems = build_data_table(market_data)
-        if kpi_elems:
-            kpi_title = f"市场数据看板 - {today_full}"
-            elements = kpi_elems[:]
-            if data_elems:
-                elements.append({"tag": "hr"})
-                elements.append({"tag": "markdown", "content": "**数据明细**"})
-                elements.extend(data_elems)
-                ts = market_data.get("timestamp", "")
-                if ts:
-                    elements.append({"tag": "note",
-                                     "elements": [{"tag": "plain_text",
-                                                   "content": f"数据采集时间: {ts}"}]})
+    for card_cfg in layout_cards:
+        if not card_cfg.get("enabled", True):
+            continue
+        cid = card_cfg["id"]
+        color = card_cfg.get("color", "blue")
+
+        # --- summary ---
+        if cid == "summary":
+            st, sc, scol = build_summary_card(ai_result, today_full, settings)
             if dry:
-                print(f"\n=== {kpi_title} ===\n[KPI看板 + 数据明细表]\n")
+                print(f"\n=== {st} ({scol}) ===\n{sc}\n")
             else:
-                send_elements_card(app_id, app_secret, receive_id, kpi_title,
-                                   elements, settings.get("kpi_card_color", "blue"))
-            print("  [OK] KPI 看板卡片")
+                send_card(app_id, app_secret, receive_id, st, sc, color)
+            print(f"  [OK] {st}")
 
-    # -- Card 3: 图表卡片 --
-    if chart_specs and not dry:
-        image_keys = []
-        for label, path in chart_specs:
-            key = send_upload(app_id, app_secret, path)
-            if key:
-                image_keys.append((label, key))
-                print(f"  [OK] 图片上传: {label}")
-            else:
-                print(f"  [WARN] 图片上传失败: {label}")
-        if image_keys:
-            chart_elems = build_chart_elements(image_keys, settings)
-            chart_title = f"量化图表 - {today_full}"
-            send_elements_card(app_id, app_secret, receive_id, chart_title,
-                               chart_elems, settings.get("chart_card_color", "wathet"))
-            print("  [OK] 图表卡片")
-    elif chart_specs and dry:
-        for label, path in chart_specs:
-            print(f"\n=== 图表: {label} ===\n{path}\n")
+        # --- kpi_dashboard ---
+        elif cid == "kpi_dashboard":
+            if market_data and market_data.get("items"):
+                kpi_elems = build_kpi_elements(market_data, settings)
+                data_elems = build_data_table(market_data)
+                if kpi_elems:
+                    kpi_title = f"市场数据看板 - {today_full}"
+                    elements = kpi_elems[:]
+                    if data_elems:
+                        elements.append({"tag": "hr"})
+                        elements.append({"tag": "markdown", "content": "**数据明细**"})
+                        elements.extend(data_elems)
+                        ts = market_data.get("timestamp", "")
+                        if ts:
+                            elements.append({"tag": "note",
+                                             "elements": [{"tag": "plain_text",
+                                                           "content": f"数据采集时间: {ts}"}]})
+                    if dry:
+                        print(f"\n=== {kpi_title} ===\n[KPI看板 + 数据明细表]\n")
+                    else:
+                        send_elements_card(app_id, app_secret, receive_id, kpi_title,
+                                           elements, color)
+                    print("  [OK] KPI 看板卡片")
 
-    # -- Card 4+: 报告正文 --
-    body = (ai_result.get("text", "") if ai_result.get("raw")
-            else ai_result.get("sections", ""))
-    chunks = split_markdown(body, card_limit)
-    for idx, chunk in enumerate(chunks, 1):
-        title = (f"{report_title} {idx} - {today_full}"
-                 if len(chunks) > 1
-                 else f"{report_title} - {today_full}")
-        if dry:
-            print(f"\n=== {title} ===\n{chunk}\n")
+        # --- charts ---
+        elif cid == "charts":
+            if chart_specs and not dry:
+                image_keys = []
+                for label, path in chart_specs:
+                    key = send_upload(app_id, app_secret, path)
+                    if key:
+                        image_keys.append((label, key))
+                        print(f"  [OK] 图片上传: {label}")
+                    else:
+                        print(f"  [WARN] 图片上传失败: {label}")
+                if image_keys:
+                    chart_elems = build_chart_elements(image_keys, settings)
+                    chart_title = f"量化图表 - {today_full}"
+                    send_elements_card(app_id, app_secret, receive_id, chart_title,
+                                       chart_elems, color)
+                    print("  [OK] 图表卡片")
+            elif chart_specs and dry:
+                for label, path in chart_specs:
+                    print(f"\n=== 图表: {label} ===\n{path}\n")
+
+        # --- report_body ---
+        elif cid == "report_body":
+            body = (ai_result.get("text", "") if ai_result.get("raw")
+                    else ai_result.get("sections", ""))
+            chunks = split_markdown(body, card_limit)
+            for idx, chunk in enumerate(chunks, 1):
+                title = (f"{report_title} {idx} - {today_full}"
+                         if len(chunks) > 1
+                         else f"{report_title} - {today_full}")
+                if dry:
+                    print(f"\n=== {title} ===\n{chunk}\n")
+                else:
+                    send_card(app_id, app_secret, receive_id, title, chunk, color)
+                print(f"  [OK] {title}")
+
         else:
-            send_card(app_id, app_secret, receive_id, title, chunk,
-                      settings.get("report_card_color", "green"))
-        print(f"  [OK] {title}")
-
-    # -- Cards: 信源列表（已禁用） --
-    # for title, content, color in build_source_cards(articles, today_short, settings):
-    #     if dry:
-    #         print(f"\n=== {title} ({color}) ===\n{content}\n")
-    #     else:
-    #         send_card(app_id, app_secret, receive_id, title, content, color)
-    #     print(f"  [OK] {title}")
+            print(f"  [WARN] 未知卡片类型: {cid}")
 
     if not dry:
         _mark_pushed(today_full)
