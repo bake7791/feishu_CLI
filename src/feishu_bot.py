@@ -175,10 +175,17 @@ def _img_element(image_key, alt_text="chart"):
 # 消息推送
 # ================================================================
 
+
+def _receive_id_type(receive_id):
+    if receive_id.startswith("oc_"):
+        return "chat_id"
+    return "open_id"
+
+
 def _send_message(app_id, app_secret, receive_id, card, retries=3):
     """底层消息发送：推送卡片 JSON 到飞书 im/v1/messages。"""
     token = _get_tenant_access_token(app_id, app_secret)
-    url = "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id"
+    url = "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=" + _receive_id_type(receive_id)
     body = json.dumps({
         "receive_id": receive_id,
         "msg_type": "interactive",
@@ -229,7 +236,7 @@ def send_elements_card(app_id, app_secret, receive_id, title, elements, color,
 def send_alert(app_id, app_secret, receive_id, message):
     """推送纯文本故障告警。"""
     token = _get_tenant_access_token(app_id, app_secret)
-    url = "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id"
+    url = "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=" + _receive_id_type(receive_id)
     body = json.dumps({
         "receive_id": receive_id,
         "msg_type": "text",
