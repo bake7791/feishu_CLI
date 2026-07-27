@@ -1,4 +1,4 @@
-﻿# 每日情报推送机器人 — 飞书企业自建应用版
+# 每日情报推送机器人 — 飞书企业自建应用版
 
 基于飞书企业自建应用 + GitHub Actions 的自动化情报推送系统。  
 **换品种、换行业、换数据源、调卡片顺序只需编辑 JSON 文件，无需改代码。**
@@ -223,6 +223,162 @@ src/
 国内品种（`source: "eastmoney"` + `fallback: "sina"`）在 GitHub Actions 中会先尝试东方财富，失败后自动切换新浪，两个都失败则用备用数据填充。对使用者完全透明。
 
 ---
+
+
+## 实战示例
+
+### 示例一：换行业——从铜改成氢燃料电池
+
+改 `config/report_config.json` 三个地方：
+
+**report 元数据：**
+```json
+"report": {
+  "title": "氢燃料电池产业每日情报",
+  "industry": "氢燃料电池",
+  "audience": "企业高管、技术负责人、投资决策者"
+}
+```
+
+**data_items（追踪铂金、天然气、碳配额、美元指数）：**
+```json
+"data_items": [
+  {
+    "name": "铂金期货", "source": "yahoo", "symbol": "PL=F",
+    "unit": "美元/盎司", "exchange": "NYMEX", "region": "GLOBAL",
+    "category": "catalyst", "enabled": true
+  },
+  {
+    "name": "天然气主力", "source": "eastmoney", "fallback": "sina",
+    "symbol": "NG0", "market": "113", "unit": "元/吨",
+    "exchange": "SHFE", "region": "CN", "category": "feedstock", "enabled": true
+  },
+  {
+    "name": "碳配额价格", "source": "yahoo", "symbol": "KRN=F",
+    "unit": "欧元/吨", "exchange": "ICE", "region": "GLOBAL",
+    "category": "policy", "enabled": true
+  },
+  {
+    "name": "美元指数", "source": "yahoo", "symbol": "DX-Y.NYB",
+    "unit": "", "exchange": "ICE", "region": "GLOBAL",
+    "category": "macro", "enabled": true
+  }
+]
+```
+
+**news.topics（氢燃料电池关键词）：**
+```json
+"topics": [
+  "hydrogen fuel cell policy",
+  "green hydrogen production",
+  "PEM fuel cell technology",
+  "hydrogen refueling station",
+  "fuel cell vehicle China",
+  "electrolyzer manufacturing",
+  "碳交易 氢能",
+  "燃料电池 补贴",
+  "氢能 示范城市"
+]
+```
+
+然后编辑 `config/prompt_system.example.txt`，把提示词里的“铜产业链行情”等模块换成“政策动态”“技术与成本”“产业链动态”等。**全程不改 Python 代码。**
+
+---
+
+### 示例二：调整卡片——只要摘要和正文，图表放前面
+
+```json
+"layout": {
+  "cards": [
+    {"id": "charts",      "enabled": true, "color": "wathet"},
+    {"id": "summary",     "enabled": true, "color": "blue"},
+    {"id": "report_body", "enabled": true, "color": "green"},
+    {"id": "kpi_dashboard","enabled": false}
+  ]
+}
+```
+
+---
+
+### 示例三：增加品种——加一个 LME 铜
+
+在 `data_items` 数组中插入（注意找对 Yahoo Finance 的 symbol）：
+
+```json
+{
+  "name": "LME铜3M",
+  "source": "yahoo",
+  "symbol": "LME=F",
+  "unit": "美元/吨",
+  "exchange": "LME",
+  "region": "GLOBAL",
+  "category": "copper",
+  "enabled": true
+}
+```
+
+推送、保存。下次报告 KPI 看板自动多一列 LME 铜，无需动代码。
+
+---
+
+### 示例四：加行业 RSS——接入上海有色网和 Mysteel
+
+编辑 `config/sources.json`，在 `feeds` 数组中加：
+
+```json
+"feeds": [
+  {"name": "SMM 铜",  "url": "https://news.smm.cn/rss/copper",    "region": "CN"},
+  {"name": "SMM 铝",  "url": "https://news.smm.cn/rss/aluminum",  "region": "CN"},
+  {"name": "Mysteel",     "url": "https://feed.mysteel.com/有色", "region": "CN"}
+]
+```
+
+crawler 自动抓取，和 Google News 一起去重排序。
+
+---
+
+### 示例五：改环境变量名——FEISHU_APP_ID → MY_BOT_ID
+
+编辑 `src/env_vars.py`：
+
+```python
+ENV_FEISHU_APP_ID = "MY_BOT_ID"
+```
+
+然后同步更新 GitHub Secrets 名称 + `.github/workflows/daily_report.yml` 第 32 行：
+
+```yaml
+MY_BOT_ID: ${{ secrets.MY_BOT_ID }}
+```
+
+其他 3 个凭据变量同理。
+
+---
+
+### 示例六：本地测试完整流程
+
+```powershell
+# 1. 进入项目
+cd feishu_robot
+
+# 2. 装依赖
+pip install -r requirements.txt
+
+# 3. 设环境变量
+$env:FEISHU_APP_ID="cli_xxxxx"
+$env:FEISHU_APP_SECRET="xxxxx"
+$env:FEISHU_RECEIVE_ID="ou_xxxxx"
+$env:AI_API_TOKEN="ghp_xxxxx"
+
+# 4. 预览（不推送，验证所有卡片和数据）
+$env:DRY_RUN=1
+python main.py
+
+# 5. 确认无误后正式推送
+$env:DRY_RUN=$null
+python main.py
+```
+
 
 ## 常见问题
 
