@@ -120,6 +120,16 @@ def run():
             market_data = fetch_market_data(data_items)
             if not market_data.get("items"):
                 market_data = get_sample_data(data_items)
+            # 补齐缺失的数据项：国内源在 CI 中可能被墙，用备用数据填充
+            sample = get_sample_data(data_items)
+            fetched_names = {item["name"] for item in market_data.get("items", [])}
+            for sitem in sample["items"]:
+                if sitem["name"] not in fetched_names:
+                    sitem["_fallback"] = True
+                    market_data["items"].append(sitem)
+                    market_data.setdefault("errors", []).append(
+                        f"{sitem['name']} 使用备用数据"
+                    )
             n = len(market_data.get("items", []))
             print(f"  量化数据: {n} 项")
             for e in market_data.get("errors", []):
