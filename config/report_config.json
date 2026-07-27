@@ -139,5 +139,40 @@
       "flag": "🌐",
       "name": "全球"
     }
+  },
+  "layout": {
+    "_comment": [
+      "卡片布局配置：控制推送卡片的顺序和显隐。",
+      "  id: 卡片类型（summary / kpi_dashboard / charts / report_body）",
+      "  enabled: true=显示, false=跳过",
+      "  color: 卡片头部颜色（blue/green/red/turquoise/purple/wathet）",
+      "",
+      " 调整示例：",
+      "  - 想把图表放最前面 → 把 charts 移到数组第一项",
+      "  - 不想发 KPI 看板 → 把 kpi_dashboard 的 enabled 改成 false",
+      "  - 不想发报告正文 → 把 report_body 的 enabled 改成 false"
+    ],
+    "cards": [
+      {
+        "id": "summary",
+        "enabled": true,
+        "color": "blue"
+      },
+      {
+        "id": "kpi_dashboard",
+        "enabled": true,
+        "color": "blue"
+      },
+      {
+        "id": "charts",
+        "enabled": true,
+        "color": "wathet"
+      },
+      {
+        "id": "report_body",
+        "enabled": true,
+        "color": "green"
+      }
+    ]
   }
 }
