@@ -18,6 +18,7 @@
 
 import json
 import os
+from .env_vars import (ENV_FEISHU_APP_ID, ENV_FEISHU_APP_SECRET, ENV_FEISHU_RECEIVE_ID, ENV_AI_TOKEN, ENV_AI_TOKEN_FALLBACK)
 from pathlib import Path
 
 
@@ -131,13 +132,13 @@ def load_all(config_dir):
     prompt_fallback = load_prompt_fallback(config_dir)
 
     # ── 环境变量密钥 ──
-    app_id     = os.environ.get("FEISHU_APP_ID", "")
-    app_secret = os.environ.get("FEISHU_APP_SECRET", "")
-    receive_id = os.environ.get("FEISHU_RECEIVE_ID", "")
+    app_id     = os.environ.get(ENV_FEISHU_APP_ID, "")
+    app_secret = os.environ.get(ENV_FEISHU_APP_SECRET, "")
+    receive_id = os.environ.get(ENV_FEISHU_RECEIVE_ID, "")
 
     ai_api_token = (
-        os.environ.get("AI_API_TOKEN")
-        or os.environ.get("GITHUB_TOKEN", "")
+        os.environ.get(ENV_AI_TOKEN)
+        or os.environ.get(ENV_AI_TOKEN_FALLBACK, "")
     )
 
     # ── 合并：report_config 中的设置覆盖旧 settings ──
