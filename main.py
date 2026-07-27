@@ -30,6 +30,7 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent))
 
 from src.config_loader import load_all
+from src.env_vars import ENV_DRY_RUN
 from src.crawler import search_all
 from src.ai_client import ai_analyze
 from src.feishu_bot import (
@@ -70,7 +71,7 @@ def run():
     td = datetime.now()
     today_full = td.strftime("%Y-%m-%d")
     today_short = today_full.split("-")[1]
-    dry = bool(os.environ.get("DRY_RUN"))
+    dry = bool(os.environ.get(ENV_DRY_RUN))
 
     if not dry and _check_already_pushed(today_full):
         print(f"[SKIP] {today_full} 已推送过，跳过本次执行")
