@@ -30,13 +30,22 @@
   },
   "region_buckets": {
     "_desc": "地区分组规则",
-    "中国": ["CN"],
-    "美洲": ["US", "CL"],
-    "其他": ["GB", "AU", "GLOBAL"]
+    "中国": [
+      "CN"
+    ],
+    "美洲": [
+      "US",
+      "CL"
+    ],
+    "其他": [
+      "GB",
+      "AU",
+      "GLOBAL"
+    ]
   },
-  "ai_endpoint": "https://models.inference.ai.azure.com/chat/completions",
+  "ai_endpoint": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
   "_ai_endpoint_openai": "若使用 OpenAI 直连，改为 https://api.openai.com/v1/chat/completions",
-  "ai_model": "gpt-4o",
+  "ai_model": "glm-4-flash",
   "max_tokens": 4000,
   "temperature": 0.3,
   "card_char_limit": 4500,
@@ -47,7 +56,11 @@
   "source_card_color_2": "purple",
   "no_news_card_color": "red",
   "no_news_text": "今日暂无铜及预焙阳极相关新闻。",
-  "summary_labels": ["核心结论", "关键数据", "决策建议"],
+  "summary_labels": [
+    "核心结论",
+    "关键数据",
+    "决策建议"
+  ],
   "kpi_card_color": "blue",
   "chart_card_color": "wathet",
   "enable_market_data": true,
