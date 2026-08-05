@@ -1,9 +1,5 @@
-﻿# 真实配置文件（含密钥/隐私信息，禁止提交）
+# 真实配置文件（含密钥/隐私信息，禁止提交）
 config/settings.json
-config/sources.json
-config/prompt_system.txt
-config/prompt_user.txt
-config/prompt_fallback.txt
 
 # 推送状态文件（防重复推送）
 .push_state
@@ -11,7 +7,7 @@ config/prompt_fallback.txt
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
+*.class
 *.so
 *.egg-info/
 dist/
